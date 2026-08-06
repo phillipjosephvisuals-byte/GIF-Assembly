@@ -20,26 +20,60 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
     .field {
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
     label {
       display: block;
       font-weight: 600;
       margin-bottom: 6px;
     }
-    input[type="file"] {
+    input[type="file"], input[type="range"] {
       width: 100%;
-      padding: 8px;
+      box-sizing: border-box;
     }
+    
+    /* Meter and Controls Styling */
+    .controls-panel {
+      background: #f1f5f9;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none; /* Hidden until video loads */
+    }
+    .meter-container {
+      margin-top: 12px;
+    }
+    .meter-bar-bg {
+      height: 12px;
+      background-color: #e2e8f0;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .meter-bar-fill {
+      height: 100%;
+      background-color: #2563eb;
+      width: 0%;
+      transition: width 0.2s ease, background-color 0.2s ease;
+    }
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
     button {
       background-color: #0066cc;
       color: white;
       border: none;
-      padding: 10px 18px;
+      padding: 12px 18px;
       border-radius: 6px;
       font-weight: 600;
       cursor: pointer;
       width: 100%;
+      font-size: 1rem;
     }
     button:disabled {
       background-color: #ccc;
@@ -66,14 +100,14 @@
       background-color: #28a745;
       color: white;
       text-decoration: none;
-      padding: 8px 16px;
+      padding: 10px 16px;
       border-radius: 6px;
       font-weight: 600;
       text-align: center;
     }
   </style>
 
-  <!-- gif.js Library from CDNs -->
+  <!-- gif.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 </head>
 <body>
@@ -86,6 +120,26 @@
       <input type="file" id="videoInput" accept="video/*">
     </div>
 
+    <!-- Speed & Representation Panel -->
+    <div id="controlsPanel" class="controls-panel">
+      <div class="field">
+        <label for="speedSlider">Speed Multiplier: <span id="speedValue">1.0x</span></label>
+        <input type="range" id="speedSlider" min="0.5" max="4.0" step="0.1" value="1.0">
+        <div class="slider-labels">
+          <span>0.5x (Slower)</span>
+          <span>1.0x (Normal)</span>
+          <span>4.0x (Faster)</span>
+        </div>
+      </div>
+
+      <div class="meter-container">
+        <label>Video Coverage Budget (100 frames max): <span id="coverageValue">0%</span></label>
+        <div class="meter-bar-bg">
+          <div id="meterFill" class="meter-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+
     <button id="convertBtn" disabled>Convert to 410px GIF</button>
     <div id="status"></div>
 
@@ -96,12 +150,21 @@
     </div>
   </div>
 
-  <!-- Hidden elements used for processing -->
+  <!-- Hidden processing elements -->
   <video id="hiddenVideo" style="display:none;" preload="auto" muted></video>
   <canvas id="hiddenCanvas" style="display:none;"></canvas>
 
   <script>
+    const FRAME_BUDGET = 100; // Fixed budget of 100 frames
+    const TARGET_FPS = 10;     // Standard GIF playback frame rate
+
     const videoInput = document.getElementById('videoInput');
+    const controlsPanel = document.getElementById('controlsPanel');
+    const speedSlider = document.getElementById('speedSlider');
+    const speedValue = document.getElementById('speedValue');
+    const coverageValue = document.getElementById('coverageValue');
+    const meterFill = document.getElementById('meterFill');
+    
     const convertBtn = document.getElementById('convertBtn');
     const status = document.getElementById('status');
     const hiddenVideo = document.getElementById('hiddenVideo');
@@ -111,6 +174,7 @@
     const downloadLink = document.getElementById('downloadLink');
 
     let videoFileUrl = null;
+    let videoDuration = 0;
 
     videoInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -118,22 +182,47 @@
         if (videoFileUrl) URL.revokeObjectURL(videoFileUrl);
         videoFileUrl = URL.createObjectURL(file);
         hiddenVideo.src = videoFileUrl;
-        convertBtn.disabled = false;
-        status.textContent = 'Video loaded. Ready to convert.';
+        
+        hiddenVideo.onloadedmetadata = () => {
+          videoDuration = hiddenVideo.duration;
+          controlsPanel.style.display = 'block';
+          convertBtn.disabled = false;
+          status.textContent = 'Video loaded. Adjust speed and convert.';
+          updateMeter();
+        };
       }
     });
 
+    // Calculate how much video is captured given speed and the 100-frame budget
+    function updateMeter() {
+      const speed = parseFloat(speedSlider.value);
+      speedValue.textContent = `${speed.toFixed(1)}x`;
+
+      // Seconds of real-time video captured by 100 frames at current speed
+      const effectiveDurationCaptured = (FRAME_BUDGET / TARGET_FPS) * speed;
+      
+      // Calculate coverage percentage (capped at 100%)
+      let percentage = Math.min(100, Math.round((effectiveDurationCaptured / videoDuration) * 100));
+      
+      coverageValue.textContent = `${percentage}% of video covered`;
+      meterFill.style.width = `${percentage}%`;
+
+      if (percentage >= 100) {
+        meterFill.style.backgroundColor = '#16a34a'; // Green if full video fits
+      } else {
+        meterFill.style.backgroundColor = '#2563eb'; // Blue if partial
+      }
+    }
+
+    speedSlider.addEventListener('input', updateMeter);
+
     convertBtn.addEventListener('click', async () => {
       convertBtn.disabled = true;
+      speedSlider.disabled = true;
       status.textContent = 'Processing frames...';
       previewContainer.style.display = 'none';
 
-      // Ensure video metadata is loaded
-      if (hiddenVideo.readyState < 1) {
-        await new Promise(resolve => hiddenVideo.onloadedmetadata = resolve);
-      }
-
-      // Calculate 410px width dimensions while preserving aspect ratio
+      const speed = parseFloat(speedSlider.value);
       const targetWidth = 410;
       const aspectRatio = hiddenVideo.videoHeight / hiddenVideo.videoWidth;
       const targetHeight = Math.round(targetWidth * aspectRatio);
@@ -142,7 +231,7 @@
       hiddenCanvas.height = targetHeight;
       const ctx = hiddenCanvas.getContext('2d');
 
-      // Setup gif.js with explicit worker via Blob to avoid CORS worker issues
+      // Setup Worker Blob to bypass cross-origin issues
       const workerBlob = new Blob([`
         importScripts('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
       `], { type: 'application/javascript' });
@@ -156,21 +245,29 @@
         workerScript: workerUrl
       });
 
-      const frameRate = 10; // Extract 10 frames per second
-      const frameDuration = 1 / frameRate;
-      const totalDuration = Math.min(hiddenVideo.duration, 10); // Limit to 10s max for browser stability
+      // Frame step in real-time video seconds
+      const videoTimeStep = (1 / TARGET_FPS) * speed;
+      
+      // Captured duration limited by either 100 frames budget or end of video
+      const maxCapturableDuration = (FRAME_BUDGET / TARGET_FPS) * speed;
+      const actualCaptureDuration = Math.min(videoDuration, maxCapturableDuration);
+      
       let currentTime = 0;
+      let framesExtracted = 0;
 
-      // Extract frames by seeking through video time
-      while (currentTime < totalDuration) {
+      while (currentTime < actualCaptureDuration && framesExtracted < FRAME_BUDGET) {
         hiddenVideo.currentTime = currentTime;
         await new Promise(resolve => hiddenVideo.onseeked = resolve);
 
         ctx.drawImage(hiddenVideo, 0, 0, targetWidth, targetHeight);
-        gif.addFrame(ctx, { copy: true, delay: frameDuration * 1000 });
+        
+        // Frame delay in GIF playback milliseconds (fixed 100ms per frame for 10fps playback)
+        gif.addFrame(ctx, { copy: true, delay: 100 });
 
-        currentTime += frameDuration;
-        status.textContent = `Processing frames: ${Math.round((currentTime / totalDuration) * 100)}%`;
+        currentTime += videoTimeStep;
+        framesExtracted++;
+
+        status.textContent = `Extracting frames: ${Math.round((currentTime / actualCaptureDuration) * 100)}%`;
       }
 
       status.textContent = 'Rendering GIF...';
@@ -182,6 +279,7 @@
         previewContainer.style.display = 'block';
         status.textContent = 'Conversion complete!';
         convertBtn.disabled = false;
+        speedSlider.disabled = false;
         URL.revokeObjectURL(workerUrl);
       });
 
