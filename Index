@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video to 410px GIF Converter</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    .card {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    .field {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    input[type="file"] {
+      width: 100%;
+      padding: 8px;
+    }
+    button {
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    #status {
+      margin-top: 16px;
+      font-weight: bold;
+      color: #555;
+    }
+    #preview-container {
+      margin-top: 24px;
+      display: none;
+    }
+    img {
+      display: block;
+      margin-top: 10px;
+      border-radius: 8px;
+      max-width: 100%;
+    }
+    .download-btn {
+      display: inline-block;
+      margin-top: 12px;
+      background-color: #28a745;
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-align: center;
+    }
+  </style>
+
+  <!-- gif.js Library from CDNs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Video to 410px GIF Converter</h2>
+    
+    <div class="field">
+      <label for="videoInput">Select Video File</label>
+      <input type="file" id="videoInput" accept="video/*">
+    </div>
+
+    <button id="convertBtn" disabled>Convert to 410px GIF</button>
+    <div id="status"></div>
+
+    <div id="preview-container">
+      <h3>Resulting GIF</h3>
+      <img id="gifOutput" alt="Generated GIF">
+      <a id="downloadLink" class="download-btn" download="output.gif">Download GIF</a>
+    </div>
+  </div>
+
+  <!-- Hidden elements used for processing -->
+  <video id="hiddenVideo" style="display:none;" preload="auto" muted></video>
+  <canvas id="hiddenCanvas" style="display:none;"></canvas>
+
+  <script>
+    const videoInput = document.getElementById('videoInput');
+    const convertBtn = document.getElementById('convertBtn');
+    const status = document.getElementById('status');
+    const hiddenVideo = document.getElementById('hiddenVideo');
+    const hiddenCanvas = document.getElementById('hiddenCanvas');
+    const previewContainer = document.getElementById('preview-container');
+    const gifOutput = document.getElementById('gifOutput');
+    const downloadLink = document.getElementById('downloadLink');
+
+    let videoFileUrl = null;
+
+    videoInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        if (videoFileUrl) URL.revokeObjectURL(videoFileUrl);
+        videoFileUrl = URL.createObjectURL(file);
+        hiddenVideo.src = videoFileUrl;
+        convertBtn.disabled = false;
+        status.textContent = 'Video loaded. Ready to convert.';
+      }
+    });
+
+    convertBtn.addEventListener('click', async () => {
+      convertBtn.disabled = true;
+      status.textContent = 'Processing frames...';
+      previewContainer.style.display = 'none';
+
+      // Ensure video metadata is loaded
+      if (hiddenVideo.readyState < 1) {
+        await new Promise(resolve => hiddenVideo.onloadedmetadata = resolve);
+      }
+
+      // Calculate 410px width dimensions while preserving aspect ratio
+      const targetWidth = 410;
+      const aspectRatio = hiddenVideo.videoHeight / hiddenVideo.videoWidth;
+      const targetHeight = Math.round(targetWidth * aspectRatio);
+
+      hiddenCanvas.width = targetWidth;
+      hiddenCanvas.height = targetHeight;
+      const ctx = hiddenCanvas.getContext('2d');
+
+      // Setup gif.js with explicit worker via Blob to avoid CORS worker issues
+      const workerBlob = new Blob([`
+        importScripts('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
+      `], { type: 'application/javascript' });
+      const workerUrl = URL.createObjectURL(workerBlob);
+
+      const gif = new GIF({
+        workers: 2,
+        quality: 10,
+        width: targetWidth,
+        height: targetHeight,
+        workerScript: workerUrl
+      });
+
+      const frameRate = 10; // Extract 10 frames per second
+      const frameDuration = 1 / frameRate;
+      const totalDuration = Math.min(hiddenVideo.duration, 10); // Limit to 10s max for browser stability
+      let currentTime = 0;
+
+      // Extract frames by seeking through video time
+      while (currentTime < totalDuration) {
+        hiddenVideo.currentTime = currentTime;
+        await new Promise(resolve => hiddenVideo.onseeked = resolve);
+
+        ctx.drawImage(hiddenVideo, 0, 0, targetWidth, targetHeight);
+        gif.addFrame(ctx, { copy: true, delay: frameDuration * 1000 });
+
+        currentTime += frameDuration;
+        status.textContent = `Processing frames: ${Math.round((currentTime / totalDuration) * 100)}%`;
+      }
+
+      status.textContent = 'Rendering GIF...';
+
+      gif.on('finished', (blob) => {
+        const gifUrl = URL.createObjectURL(blob);
+        gifOutput.src = gifUrl;
+        downloadLink.href = gifUrl;
+        previewContainer.style.display = 'block';
+        status.textContent = 'Conversion complete!';
+        convertBtn.disabled = false;
+        URL.revokeObjectURL(workerUrl);
+      });
+
+      gif.render();
+    });
+  </script>
+</body>
+</html>
