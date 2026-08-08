@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Video to 410px GIF Converter</title>
+  <title>Multi-Video 410px GIF Converter</title>
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
-      max-width: 600px;
+      max-width: 720px;
       margin: 40px auto;
       padding: 0 20px;
       background-color: #f9f9f9;
@@ -19,34 +19,85 @@
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
-    .field {
-      margin-bottom: 20px;
+    .field { margin-bottom: 20px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; }
+    input[type="file"] { width: 100%; box-sizing: border-box; }
+
+    /* Clip List & Drag Drop */
+    #clipList { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+    .clip-card {
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: grab;
+      user-select: none;
     }
-    label {
-      display: block;
+    .clip-card.dragging { opacity: 0.5; border-color: #2563eb; }
+    .clip-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
       font-weight: 600;
-      margin-bottom: 6px;
+      font-size: 0.9rem;
     }
-    input[type="file"], input[type="range"] {
+
+    /* Filmstrip & Trimmer Container */
+    .filmstrip-container {
+      position: relative;
+      height: 50px;
+      background: #000;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .filmstrip-canvas {
       width: 100%;
-      box-sizing: border-box;
+      height: 100%;
+      display: block;
     }
-    
-    /* Meter and Controls Styling */
-    .controls-panel {
+    .trimmer-overlay {
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 0%; width: 100%;
+      background: rgba(37, 99, 235, 0.3);
+      border-left: 4px solid #2563eb;
+      border-right: 4px solid #2563eb;
+      box-sizing: border-border-box;
+      cursor: move;
+    }
+    .handle {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 10px;
+      background: #1e40af;
+      cursor: ew-resize;
+    }
+    .handle-left { left: -5px; }
+    .handle-right { right: -5px; }
+
+    /* Overall Meter Panel */
+    .meter-panel {
       background: #f1f5f9;
       padding: 16px;
       border-radius: 8px;
       margin-bottom: 20px;
-      display: none; /* Hidden until video loads */
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
-    .meter-container {
-      margin-top: 12px;
+    .meter-status-indicator {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: #16a34a; /* Default green */
+      flex-shrink: 0;
     }
+    .meter-details { flex-grow: 1; }
     .meter-bar-bg {
-      height: 12px;
+      height: 10px;
       background-color: #e2e8f0;
-      border-radius: 6px;
+      border-radius: 5px;
       overflow: hidden;
       margin-top: 6px;
     }
@@ -55,13 +106,6 @@
       background-color: #2563eb;
       width: 0%;
       transition: width 0.2s ease, background-color 0.2s ease;
-    }
-    .slider-labels {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      color: #64748b;
-      margin-top: 4px;
     }
 
     button {
@@ -75,25 +119,10 @@
       width: 100%;
       font-size: 1rem;
     }
-    button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-    }
-    #status {
-      margin-top: 16px;
-      font-weight: bold;
-      color: #555;
-    }
-    #preview-container {
-      margin-top: 24px;
-      display: none;
-    }
-    img {
-      display: block;
-      margin-top: 10px;
-      border-radius: 8px;
-      max-width: 100%;
-    }
+    button:disabled { background-color: #ccc; cursor: not-allowed; }
+    #status { margin-top: 16px; font-weight: bold; color: #555; }
+    #preview-container { margin-top: 24px; display: none; }
+    img { display: block; margin-top: 10px; border-radius: 8px; max-width: 100%; }
     .download-btn {
       display: inline-block;
       margin-top: 12px;
@@ -113,34 +142,28 @@
 <body>
 
   <div class="card">
-    <h2>Video to 410px GIF Converter</h2>
+    <h2>Multi-Video to 410px GIF Converter</h2>
     
     <div class="field">
-      <label for="videoInput">Select Video File</label>
-      <input type="file" id="videoInput" accept="video/*">
+      <label for="videoInput">Upload Video Files (Up to 3)</label>
+      <input type="file" id="videoInput" accept="video/*" multiple>
     </div>
 
-    <!-- Speed & Representation Panel -->
-    <div id="controlsPanel" class="controls-panel">
-      <div class="field">
-        <label for="speedSlider">Speed Multiplier: <span id="speedValue">1.0x</span></label>
-        <input type="range" id="speedSlider" min="0.5" max="4.0" step="0.1" value="1.0">
-        <div class="slider-labels">
-          <span>0.5x (Slower)</span>
-          <span>1.0x (Normal)</span>
-          <span>4.0x (Faster)</span>
-        </div>
-      </div>
+    <!-- Reorderable Clip List -->
+    <div id="clipList"></div>
 
-      <div class="meter-container">
-        <label>Video Coverage Budget (100 frames max): <span id="coverageValue">0%</span></label>
+    <!-- Overall Frame Budget Indicator -->
+    <div id="meterPanel" class="meter-panel" style="display:none;">
+      <div id="statusIndicator" class="meter-status-indicator"></div>
+      <div class="meter-details">
+        <label>Total Frame Budget: <span id="frameBudgetLabel">0 / 100 Frames</span></label>
         <div class="meter-bar-bg">
           <div id="meterFill" class="meter-bar-fill"></div>
         </div>
       </div>
     </div>
 
-    <button id="convertBtn" disabled>Convert to 410px GIF</button>
+    <button id="convertBtn" disabled>Convert Clips to GIF</button>
     <div id="status"></div>
 
     <div id="preview-container">
@@ -150,88 +173,260 @@
     </div>
   </div>
 
-  <!-- Hidden processing elements -->
-  <video id="hiddenVideo" style="display:none;" preload="auto" muted></video>
   <canvas id="hiddenCanvas" style="display:none;"></canvas>
 
   <script>
-    const FRAME_BUDGET = 100; // Fixed budget of 100 frames
-    const TARGET_FPS = 10;     // Standard GIF playback frame rate
+    const MAX_FRAMES = 100;
+    const TARGET_FPS = 10; // 10 fps -> 0.1s per frame
 
     const videoInput = document.getElementById('videoInput');
-    const controlsPanel = document.getElementById('controlsPanel');
-    const speedSlider = document.getElementById('speedSlider');
-    const speedValue = document.getElementById('speedValue');
-    const coverageValue = document.getElementById('coverageValue');
+    const clipList = document.getElementById('clipList');
+    const meterPanel = document.getElementById('meterPanel');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const frameBudgetLabel = document.getElementById('frameBudgetLabel');
     const meterFill = document.getElementById('meterFill');
-    
     const convertBtn = document.getElementById('convertBtn');
     const status = document.getElementById('status');
-    const hiddenVideo = document.getElementById('hiddenVideo');
     const hiddenCanvas = document.getElementById('hiddenCanvas');
     const previewContainer = document.getElementById('preview-container');
     const gifOutput = document.getElementById('gifOutput');
     const downloadLink = document.getElementById('downloadLink');
 
-    let videoFileUrl = null;
-    let videoDuration = 0;
+    let clips = [];
 
-    videoInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        if (videoFileUrl) URL.revokeObjectURL(videoFileUrl);
-        videoFileUrl = URL.createObjectURL(file);
-        hiddenVideo.src = videoFileUrl;
-        
-        hiddenVideo.onloadedmetadata = () => {
-          videoDuration = hiddenVideo.duration;
-          controlsPanel.style.display = 'block';
-          convertBtn.disabled = false;
-          status.textContent = 'Video loaded. Adjust speed and convert.';
-          updateMeter();
+    videoInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files).slice(0, 3); // Limit to 3 files
+      if (!files.length) return;
+
+      // Reset existing state
+      clips.forEach(c => URL.revokeObjectURL(c.url));
+      clips = [];
+      clipList.innerHTML = '';
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const url = URL.createObjectURL(file);
+        const video = document.createElement('video');
+        video.src = url;
+        video.preload = 'auto';
+        video.muted = true;
+
+        await new Promise(resolve => video.onloadedmetadata = resolve);
+
+        const clip = {
+          id: 'clip-' + Date.now() + '-' + i,
+          file,
+          url,
+          video,
+          duration: video.duration,
+          startPct: 0,
+          endPct: 1
         };
+
+        clips.push(clip);
+        renderClipCard(clip);
       }
+
+      meterPanel.style.display = 'flex';
+      convertBtn.disabled = false;
+      updateBudgetMeter();
     });
 
-    // Calculate how much video is captured given speed and the 100-frame budget
-    function updateMeter() {
-      const speed = parseFloat(speedSlider.value);
-      speedValue.textContent = `${speed.toFixed(1)}x`;
+    function renderClipCard(clip) {
+      const card = document.createElement('div');
+      card.className = 'clip-card';
+      card.draggable = true;
+      card.dataset.id = clip.id;
 
-      // Seconds of real-time video captured by 100 frames at current speed
-      const effectiveDurationCaptured = (FRAME_BUDGET / TARGET_FPS) * speed;
-      
-      // Calculate coverage percentage (capped at 100%)
-      let percentage = Math.min(100, Math.round((effectiveDurationCaptured / videoDuration) * 100));
-      
-      coverageValue.textContent = `${percentage}% of video covered`;
-      meterFill.style.width = `${percentage}%`;
+      card.innerHTML = `
+        <div class="clip-header">
+          <span>⋮⋮ ${clip.file.name}</span>
+          <span class="clip-time-info">0.0s - ${clip.duration.toFixed(1)}s</span>
+        </div>
+        <div class="filmstrip-container">
+          <canvas class="filmstrip-canvas"></canvas>
+          <div class="trimmer-overlay">
+            <div class="handle handle-left"></div>
+            <div class="handle handle-right"></div>
+          </div>
+        </div>
+      `;
 
-      if (percentage >= 100) {
-        meterFill.style.backgroundColor = '#16a34a'; // Green if full video fits
-      } else {
-        meterFill.style.backgroundColor = '#2563eb'; // Blue if partial
+      clipList.appendChild(card);
+      setupDragAndDrop(card);
+      setupTrimmer(card, clip);
+      generateFilmstrip(card, clip);
+    }
+
+    /* Filmstrip Generator */
+    async function generateFilmstrip(card, clip) {
+      const canvas = card.querySelector('.filmstrip-canvas');
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width || 600;
+      canvas.height = rect.height || 50;
+
+      const thumbCount = 8;
+      const thumbWidth = canvas.width / thumbCount;
+      const step = clip.duration / thumbCount;
+
+      for (let i = 0; i < thumbCount; i++) {
+        clip.video.currentTime = i * step;
+        await new Promise(r => clip.video.onseeked = r);
+        ctx.drawImage(clip.video, i * thumbWidth, 0, thumbWidth, canvas.height);
       }
     }
 
-    speedSlider.addEventListener('input', updateMeter);
+    /* Visual Window / Handle Controls */
+    function setupTrimmer(card, clip) {
+      const container = card.querySelector('.filmstrip-container');
+      const overlay = card.querySelector('.trimmer-overlay');
+      const handleL = card.querySelector('.handle-left');
+      const handleR = card.querySelector('.handle-right');
+      const timeInfo = card.querySelector('.clip-time-info');
 
+      let isDragging = false;
+      let dragType = null; // 'left', 'right', or 'move'
+      let startX = 0;
+      let startStartPct = 0;
+      let startEndPct = 1;
+
+      const onMouseDown = (e, type) => {
+        e.stopPropagation();
+        isDragging = true;
+        dragType = type;
+        startX = e.clientX;
+        startStartPct = clip.startPct;
+        startEndPct = clip.endPct;
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      };
+
+      handleL.addEventListener('mousedown', (e) => onMouseDown(e, 'left'));
+      handleR.addEventListener('mousedown', (e) => onMouseDown(e, 'right'));
+      overlay.addEventListener('mousedown', (e) => {
+        if (e.target === handleL || e.target === handleR) return;
+        onMouseDown(e, 'move');
+      });
+
+      function onMouseMove(e) {
+        if (!isDragging) return;
+        const rect = container.getBoundingClientRect();
+        const deltaPct = (e.clientX - startX) / rect.width;
+
+        if (dragType === 'left') {
+          clip.startPct = Math.max(0, Math.min(startStartPct + deltaPct, clip.endPct - 0.05));
+        } else if (dragType === 'right') {
+          clip.endPct = Math.min(1, Math.max(startEndPct + deltaPct, clip.startPct + 0.05));
+        } else if (dragType === 'move') {
+          const width = startEndPct - startStartPct;
+          let newStart = startStartPct + deltaPct;
+          let newEnd = startEndPct + deltaPct;
+
+          if (newStart < 0) { newStart = 0; newEnd = width; }
+          if (newEnd > 1) { newEnd = 1; newStart = 1 - width; }
+
+          clip.startPct = newStart;
+          clip.endPct = newEnd;
+        }
+
+        updateOverlayUI();
+        updateBudgetMeter();
+      }
+
+      function onMouseUp() {
+        isDragging = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      }
+
+      function updateOverlayUI() {
+        overlay.style.left = (clip.startPct * 100) + '%';
+        overlay.style.width = ((clip.endPct - clip.startPct) * 100) + '%';
+        
+        const startTime = (clip.startPct * clip.duration).toFixed(1);
+        const endTime = (clip.endPct * clip.duration).toFixed(1);
+        timeInfo.textContent = `${startTime}s - ${endTime}s`;
+      }
+    }
+
+    /* Drag and Drop Reordering */
+    function setupDragAndDrop(card) {
+      card.addEventListener('dragstart', (e) => {
+        card.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', card.dataset.id);
+      });
+
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        reorderClipsArray();
+      });
+
+      clipList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const draggingCard = document.querySelector('.dragging');
+        const siblings = [...clipList.querySelectorAll('.clip-card:not(.dragging)')];
+        const nextSibling = siblings.find(sibling => {
+          return e.clientY <= sibling.getBoundingClientRect().top + sibling.offsetHeight / 2;
+        });
+
+        if (nextSibling) {
+          clipList.insertBefore(draggingCard, nextSibling);
+        } else {
+          clipList.appendChild(draggingCard);
+        }
+      });
+    }
+
+    function reorderClipsArray() {
+      const cardElements = [...clipList.querySelectorAll('.clip-card')];
+      clips = cardElements.map(el => clips.find(c => c.id === el.dataset.id));
+    }
+
+    /* Overall Frame Meter & Indicator Logic */
+    function updateBudgetMeter() {
+      let totalSeconds = 0;
+      clips.forEach(clip => {
+        const selectedDuration = (clip.endPct - clip.startPct) * clip.duration;
+        totalSeconds += selectedDuration;
+      });
+
+      const totalFramesNeeded = Math.round(totalSeconds * TARGET_FPS);
+      const percentage = Math.min(100, Math.round((totalFramesNeeded / MAX_FRAMES) * 100));
+
+      frameBudgetLabel.textContent = `${totalFramesNeeded} / ${MAX_FRAMES} Frames (${totalSeconds.toFixed(1)}s total)`;
+      meterFill.style.width = `${percentage}%`;
+
+      if (totalFramesNeeded <= MAX_FRAMES) {
+        statusIndicator.style.backgroundColor = '#16a34a'; // Green indicator
+        meterFill.style.backgroundColor = '#2563eb';
+        convertBtn.disabled = false;
+        status.textContent = 'Ready to convert.';
+      } else {
+        statusIndicator.style.backgroundColor = '#dc2626'; // Red indicator
+        meterFill.style.backgroundColor = '#dc2626';
+        convertBtn.disabled = true;
+        status.textContent = 'Selected sections exceed 100-frame limit. Shrink the clip selection windows to proceed.';
+      }
+    }
+
+    /* GIF Rendering Execution */
     convertBtn.addEventListener('click', async () => {
       convertBtn.disabled = true;
-      speedSlider.disabled = true;
       status.textContent = 'Processing frames...';
       previewContainer.style.display = 'none';
 
-      const speed = parseFloat(speedSlider.value);
+      // Base dimensions using the first clip's aspect ratio
+      const firstVideo = clips[0].video;
       const targetWidth = 410;
-      const aspectRatio = hiddenVideo.videoHeight / hiddenVideo.videoWidth;
+      const aspectRatio = firstVideo.videoHeight / firstVideo.videoWidth;
       const targetHeight = Math.round(targetWidth * aspectRatio);
 
       hiddenCanvas.width = targetWidth;
       hiddenCanvas.height = targetHeight;
       const ctx = hiddenCanvas.getContext('2d');
 
-      // Setup Worker Blob to bypass cross-origin issues
       const workerBlob = new Blob([`
         importScripts('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
       `], { type: 'application/javascript' });
@@ -245,29 +440,24 @@
         workerScript: workerUrl
       });
 
-      // Frame step in real-time video seconds
-      const videoTimeStep = (1 / TARGET_FPS) * speed;
-      
-      // Captured duration limited by either 100 frames budget or end of video
-      const maxCapturableDuration = (FRAME_BUDGET / TARGET_FPS) * speed;
-      const actualCaptureDuration = Math.min(videoDuration, maxCapturableDuration);
-      
-      let currentTime = 0;
-      let framesExtracted = 0;
+      const stepTime = 1 / TARGET_FPS;
 
-      while (currentTime < actualCaptureDuration && framesExtracted < FRAME_BUDGET) {
-        hiddenVideo.currentTime = currentTime;
-        await new Promise(resolve => hiddenVideo.onseeked = resolve);
+      for (let i = 0; i < clips.length; i++) {
+        const clip = clips[i];
+        const startTime = clip.startPct * clip.duration;
+        const endTime = clip.endPct * clip.duration;
 
-        ctx.drawImage(hiddenVideo, 0, 0, targetWidth, targetHeight);
-        
-        // Frame delay in GIF playback milliseconds (fixed 100ms per frame for 10fps playback)
-        gif.addFrame(ctx, { copy: true, delay: 100 });
+        let currentTime = startTime;
+        while (currentTime < endTime) {
+          clip.video.currentTime = currentTime;
+          await new Promise(r => clip.video.onseeked = r);
 
-        currentTime += videoTimeStep;
-        framesExtracted++;
+          ctx.drawImage(clip.video, 0, 0, targetWidth, targetHeight);
+          gif.addFrame(ctx, { copy: true, delay: 100 }); // 100ms per frame
 
-        status.textContent = `Extracting frames: ${Math.round((currentTime / actualCaptureDuration) * 100)}%`;
+          currentTime += stepTime;
+          status.textContent = `Extracting frames (Clip ${i + 1} of ${clips.length})...`;
+        }
       }
 
       status.textContent = 'Rendering GIF...';
@@ -279,7 +469,6 @@
         previewContainer.style.display = 'block';
         status.textContent = 'Conversion complete!';
         convertBtn.disabled = false;
-        speedSlider.disabled = false;
         URL.revokeObjectURL(workerUrl);
       });
 
