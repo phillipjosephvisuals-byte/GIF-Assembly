@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Video to GIF & PDF to WebP Converter</title>
+  <title>Video to GIF & Multi-Format Document Converter</title>
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
@@ -20,11 +20,18 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       margin-bottom: 30px;
     }
-    .field { margin-bottom: 20px; }
+    .field { margin-bottom: 16px; }
     label { display: block; font-weight: 600; margin-bottom: 6px; }
-    input[type="file"], input[type="range"] { width: 100%; box-sizing: border-box; }
+    input[type="file"], input[type="range"], select { 
+      width: 100%; 
+      box-sizing: border-box; 
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: white;
+    }
 
-    /* Clip List & Drag Drop */
+    /* Video Trimmer Styles */
     #clipList { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
     .clip-card {
       background: #f8fafc;
@@ -43,8 +50,6 @@
       font-weight: 600;
       font-size: 0.9rem;
     }
-
-    /* Filmstrip & Trimmer Container */
     .filmstrip-container {
       position: relative;
       height: 50px;
@@ -105,34 +110,48 @@
       transition: width 0.2s ease, background-color 0.2s ease;
     }
 
-    /* Document Converter Section */
-    .doc-controls {
+    /* Converter Section UI Layout */
+    .doc-panel {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      padding: 16px;
+      padding: 20px;
       border-radius: 8px;
       margin-top: 16px;
       display: none;
     }
-    .slider-labels {
+    .doc-row {
       display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      color: #64748b;
-      margin-top: 2px;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 16px;
     }
-    .size-badge {
+    .doc-row .field { flex: 1; margin-bottom: 0; }
+    
+    .size-badges-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .badge {
       display: inline-block;
-      padding: 4px 8px;
-      background: #e2e8f0;
-      border-radius: 4px;
+      padding: 8px 14px;
+      border-radius: 20px;
       font-size: 0.85rem;
       font-weight: 600;
-      margin-top: 8px;
+    }
+    .badge-orig { background: #e2e8f0; color: #334155; }
+    .badge-est { background: #2563eb; color: white; }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 4px;
     }
 
     button {
-      background-color: #0066cc;
+      background-color: #2563eb;
       color: white;
       border: none;
       padding: 12px 18px;
@@ -159,19 +178,21 @@
     }
   </style>
 
-  <!-- External CDNs: gif.js, pdf.js, JSZip -->
+  <!-- External Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js"></script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
   </script>
 </head>
 <body>
 
-  <!-- SECTION 1: VIDEO TO GIF -->
+  <!-- SECTION 1: VIDEO TO GIF CONVERTER -->
   <div class="card">
-    <h2>Multi-Video to 410px GIF Converter</h2>
+    <h2>Video to GIF Converter</h2>
     
     <div class="field">
       <label for="videoInput">Upload Video Files (Up to 3)</label>
@@ -200,47 +221,60 @@
     </div>
   </div>
 
-  <!-- SECTION 2: PDF/IMAGE TO WEBP & COMPRESSOR -->
+  <!-- SECTION 2: DOCUMENT & IMAGE CONVERTER -->
   <div class="card">
-    <h2>Document & Image to WebP Converter (with Size Reducer)</h2>
+    <h2>Document & Image Converter</h2>
     
     <div class="field">
-      <label for="docInput">Upload PDF or Image File (.pdf, .jpg, .png)</label>
-      <input type="file" id="docInput" accept="application/pdf, image/*">
+      <label for="docInput">Upload File (.pdf, .jpg, .png, .tiff)</label>
+      <input type="file" id="docInput" accept="application/pdf, image/*, .tiff, .tif">
     </div>
 
-    <div id="docControls" class="doc-controls">
+    <div id="docPanel" class="doc-panel">
+      <div id="selectedFileName" style="font-weight: 600; margin-bottom: 12px; color: #475569;">Selected: -</div>
+      
+      <div class="doc-row">
+        <div class="field">
+          <label for="formatSelect">Convert To</label>
+          <select id="formatSelect">
+            <option value="image/webp">WebP Images</option>
+            <option value="image/jpeg">JPEG Images</option>
+            <option value="image/png">PNG Images</option>
+            <option value="application/pdf">PDF Document</option>
+          </select>
+        </div>
+
+        <div class="size-badges-row">
+          <span class="badge badge-orig">Original: <span id="origSize">0 MB</span></span>
+          <span class="badge badge-est">Est. Output: <span id="estSize">0 MB</span></span>
+        </div>
+      </div>
+
       <div class="field">
-        <label for="qualitySlider">Compression Quality: <span id="qualityVal">80%</span></label>
+        <div class="slider-header">
+          <span>Compression Quality</span>
+          <span id="qualityVal">80%</span>
+        </div>
         <input type="range" id="qualitySlider" min="10" max="100" value="80">
-        <div class="slider-labels">
-          <span>Smaller File (Lower Quality)</span>
-          <span>Higher Quality</span>
-        </div>
       </div>
 
       <div class="field">
-        <label for="scaleSlider">Scale / Resolution: <span id="scaleVal">100%</span></label>
-        <input type="range" id="scaleSlider" min="20" max="100" value="100">
-        <div class="slider-labels">
-          <span>Downscale (Smaller Size)</span>
-          <span>100% Original Size</span>
+        <div class="slider-header">
+          <span>Resolution / Scale</span>
+          <span id="scaleVal">100%</span>
         </div>
+        <input type="range" id="scaleSlider" min="20" max="100" value="100">
       </div>
 
-      <div>
-        <span class="size-badge">Original: <span id="origSize">0 KB</span></span>
-        <span class="size-badge" style="background:#dbeafe; color:#1e40af;">Est. Output: <span id="estSize">0 KB</span></span>
-      </div>
+      <button id="convertDocBtn" style="margin-top: 12px;">Convert File</button>
     </div>
 
-    <button id="convertDocBtn" style="margin-top: 16px;" disabled>Convert & Download WebP</button>
     <div id="docStatus" class="status-text"></div>
 
     <div id="docPreviewContainer" class="preview-container">
-      <h3>Converted WebP Preview</h3>
+      <h3>Converted Result Preview</h3>
       <img id="docOutputImg" alt="Converted Output">
-      <a id="docDownloadLink" class="download-btn" download="converted.webp">Download WebP</a>
+      <a id="docDownloadLink" class="download-btn" download="converted">Download Converted File</a>
     </div>
   </div>
 
@@ -353,20 +387,12 @@
       const handleR = card.querySelector('.handle-right');
       const timeInfo = card.querySelector('.clip-time-info');
 
-      let isDragging = false;
-      let dragType = null;
-      let startX = 0;
-      let startStartPct = 0;
-      let startEndPct = 1;
+      let isDragging = false, dragType = null, startX = 0, startStartPct = 0, startEndPct = 1;
 
       const onMouseDown = (e, type) => {
         e.stopPropagation();
-        isDragging = true;
-        dragType = type;
-        startX = e.clientX;
-        startStartPct = clip.startPct;
-        startEndPct = clip.endPct;
-
+        isDragging = true; dragType = type; startX = e.clientX;
+        startStartPct = clip.startPct; startEndPct = clip.endPct;
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
       };
@@ -391,16 +417,12 @@
           const width = startEndPct - startStartPct;
           let newStart = startStartPct + deltaPct;
           let newEnd = startEndPct + deltaPct;
-
           if (newStart < 0) { newStart = 0; newEnd = width; }
           if (newEnd > 1) { newEnd = 1; newStart = 1 - width; }
-
-          clip.startPct = newStart;
-          clip.endPct = newEnd;
+          clip.startPct = newStart; clip.endPct = newEnd;
         }
 
-        updateOverlayUI();
-        updateBudgetMeter();
+        updateOverlayUI(); updateBudgetMeter();
       }
 
       function onMouseUp() {
@@ -421,20 +443,15 @@
         card.classList.add('dragging');
         e.dataTransfer.setData('text/plain', card.dataset.id);
       });
-
       card.addEventListener('dragend', () => {
         card.classList.remove('dragging');
         reorderClipsArray();
       });
-
       clipList.addEventListener('dragover', (e) => {
         e.preventDefault();
         const draggingCard = document.querySelector('.dragging');
         const siblings = [...clipList.querySelectorAll('.clip-card:not(.dragging)')];
-        const nextSibling = siblings.find(sibling => {
-          return e.clientY <= sibling.getBoundingClientRect().top + sibling.offsetHeight / 2;
-        });
-
+        const nextSibling = siblings.find(sibling => e.clientY <= sibling.getBoundingClientRect().top + sibling.offsetHeight / 2);
         if (nextSibling) clipList.insertBefore(draggingCard, nextSibling);
         else clipList.appendChild(draggingCard);
       });
@@ -447,9 +464,7 @@
 
     function updateBudgetMeter() {
       let totalSeconds = 0;
-      clips.forEach(clip => {
-        totalSeconds += (clip.endPct - clip.startPct) * clip.duration;
-      });
+      clips.forEach(clip => { totalSeconds += (clip.endPct - clip.startPct) * clip.duration; });
 
       const totalFramesNeeded = Math.round(totalSeconds * TARGET_FPS);
       const percentage = Math.min(100, Math.round((totalFramesNeeded / MAX_FRAMES) * 100));
@@ -466,7 +481,7 @@
         statusIndicator.style.backgroundColor = '#dc2626';
         meterFill.style.backgroundColor = '#dc2626';
         convertBtn.disabled = true;
-        status.textContent = 'Selected sections exceed 100-frame limit. Shrink clip selection windows.';
+        status.textContent = 'Selected sections exceed frame budget. Shrink clip windows.';
       }
     }
 
@@ -518,10 +533,12 @@
     });
 
     /* =========================================================
-       SECTION 2: PDF/IMAGE TO WEBP & SIZE REDUCER LOGIC
+       SECTION 2: DOCUMENT & IMAGE CONVERTER (PDF, TIFF, IMAGES)
        ========================================================= */
     const docInput = document.getElementById('docInput');
-    const docControls = document.getElementById('docControls');
+    const docPanel = document.getElementById('docPanel');
+    const selectedFileName = document.getElementById('selectedFileName');
+    const formatSelect = document.getElementById('formatSelect');
     const qualitySlider = document.getElementById('qualitySlider');
     const scaleSlider = document.getElementById('scaleSlider');
     const qualityVal = document.getElementById('qualityVal');
@@ -535,32 +552,59 @@
     const docDownloadLink = document.getElementById('docDownloadLink');
 
     let currentDocFile = null;
-    let pdfDoc = null;
-    let imageObj = null;
+    let loadedPages = []; // Holds canvas frames for input file pages
 
     docInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
       currentDocFile = file;
+      selectedFileName.textContent = `Selected: ${file.name}`;
       origSize.textContent = formatBytes(file.size);
-      docControls.style.display = 'block';
-      convertDocBtn.disabled = false;
+      docPanel.style.display = 'block';
       docPreviewContainer.style.display = 'none';
+      docStatus.textContent = 'Parsing file...';
+
+      loadedPages = [];
+      const ext = file.name.split('.').pop().toLowerCase();
 
       if (file.type === 'application/pdf') {
-        docStatus.textContent = 'Loading PDF file...';
         const arrayBuffer = await file.arrayBuffer();
-        pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        imageObj = null;
-        docStatus.textContent = `PDF Loaded (${pdfDoc.numPages} Pages). Ready to convert.`;
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          loadedPages.push(page);
+        }
+        docStatus.textContent = `PDF Loaded (${loadedPages.length} Pages).`;
+      } else if (ext === 'tiff' || ext === 'tif') {
+        // Parse TIFF files using UTIF.js
+        const arrayBuffer = await file.arrayBuffer();
+        const ifds = UTIF.decode(arrayBuffer);
+        for (let i = 0; i < ifds.length; i++) {
+          UTIF.decodeImage(arrayBuffer, ifds[i]);
+          const rgba = UTIF.toRGBA8(ifds[i]);
+          const canvas = document.createElement('canvas');
+          canvas.width = ifds[i].width;
+          canvas.height = ifds[i].height;
+          const ctx = canvas.getContext('2d');
+          const imgData = ctx.createImageData(canvas.width, canvas.height);
+          imgData.data.set(rgba);
+          ctx.putImageData(imgData, 0, 0);
+          loadedPages.push(canvas);
+        }
+        docStatus.textContent = `TIFF Image Loaded (${loadedPages.length} Frames).`;
       } else {
-        docStatus.textContent = 'Loading Image file...';
-        pdfDoc = null;
-        imageObj = new Image();
-        imageObj.src = URL.createObjectURL(file);
-        await new Promise(r => imageObj.onload = r);
-        docStatus.textContent = 'Image Loaded. Ready to convert.';
+        // Standard PNG/JPG Image
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        await new Promise(r => img.onload = r);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        loadedPages.push(canvas);
+        docStatus.textContent = 'Image Loaded.';
       }
 
       estimateOutputSize();
@@ -574,118 +618,137 @@
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    function updateSliderLabels() {
+    async function estimateOutputSize() {
       qualityVal.textContent = `${qualitySlider.value}%`;
       scaleVal.textContent = `${scaleSlider.value}%`;
-    }
 
-    async function estimateOutputSize() {
-      updateSliderLabels();
-      if (!currentDocFile) return;
+      if (!loadedPages.length) return;
 
       const quality = parseFloat(qualitySlider.value) / 100;
       const scale = parseFloat(scaleSlider.value) / 100;
+      const targetFormat = formatSelect.value;
 
-      // Estimate compressed output using a temporary canvas
+      // Estimate output size based on first page
       const tempCanvas = document.createElement('canvas');
       const ctx = tempCanvas.getContext('2d');
+      const page1 = loadedPages[0];
 
-      if (pdfDoc) {
-        const page = await pdfDoc.getPage(1);
-        const viewport = page.getViewport({ scale });
+      if (currentDocFile.type === 'application/pdf') {
+        const viewport = page1.getViewport({ scale });
         tempCanvas.width = viewport.width;
         tempCanvas.height = viewport.height;
-        await page.render({ canvasContext: ctx, viewport }).promise;
-      } else if (imageObj) {
-        tempCanvas.width = imageObj.width * scale;
-        tempCanvas.height = imageObj.height * scale;
-        ctx.drawImage(imageObj, 0, 0, tempCanvas.width, tempCanvas.height);
+        await page1.render({ canvasContext: ctx, viewport }).promise;
+      } else {
+        tempCanvas.width = page1.width * scale;
+        tempCanvas.height = page1.height * scale;
+        ctx.drawImage(page1, 0, 0, tempCanvas.width, tempCanvas.height);
       }
 
-      tempCanvas.toBlob((blob) => {
-        if (blob) {
-          const estimatedPageSize = blob.size * (pdfDoc ? pdfDoc.numPages : 1);
-          estSize.textContent = formatBytes(estimatedPageSize);
-        }
-      }, 'image/webp', quality);
+      if (targetFormat === 'application/pdf') {
+        // PDF output estimation
+        const baseSize = tempCanvas.width * tempCanvas.height * 0.2 * quality * loadedPages.length;
+        estSize.textContent = formatBytes(baseSize);
+      } else {
+        tempCanvas.toBlob((blob) => {
+          if (blob) {
+            estSize.textContent = formatBytes(blob.size * loadedPages.length);
+          }
+        }, targetFormat, quality);
+      }
     }
 
     qualitySlider.addEventListener('input', estimateOutputSize);
     scaleSlider.addEventListener('input', estimateOutputSize);
+    formatSelect.addEventListener('change', estimateOutputSize);
 
     convertDocBtn.addEventListener('click', async () => {
       convertDocBtn.disabled = true;
-      docStatus.textContent = 'Converting to WebP...';
+      docStatus.textContent = 'Converting file...';
       docPreviewContainer.style.display = 'none';
 
       const quality = parseFloat(qualitySlider.value) / 100;
       const scale = parseFloat(scaleSlider.value) / 100;
-      const tempCanvas = document.createElement('canvas');
-      const ctx = tempCanvas.getContext('2d');
+      const targetFormat = formatSelect.value;
+      const ext = targetFormat.split('/')[1];
 
-      if (pdfDoc) {
-        if (pdfDoc.numPages === 1) {
-          // Single-page PDF conversion
-          const page = await pdfDoc.getPage(1);
+      const renderCanvas = async (page) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (currentDocFile.type === 'application/pdf') {
           const viewport = page.getViewport({ scale });
-          tempCanvas.width = viewport.width;
-          tempCanvas.height = viewport.height;
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
           await page.render({ canvasContext: ctx, viewport }).promise;
-
-          tempCanvas.toBlob((blob) => {
-            const url = URL.createObjectURL(blob);
-            docOutputImg.src = url;
-            docDownloadLink.href = url;
-            docDownloadLink.download = 'page-1.webp';
-            docPreviewContainer.style.display = 'block';
-            docStatus.textContent = 'Conversion complete!';
-            convertDocBtn.disabled = false;
-          }, 'image/webp', quality);
         } else {
-          // Multi-page PDF conversion into a downloadable ZIP archive
-          const zip = new JSZip();
-          for (let i = 1; i <= pdfDoc.numPages; i++) {
-            docStatus.textContent = `Converting page ${i} of ${pdfDoc.numPages}...`;
-            const page = await pdfDoc.getPage(i);
-            const viewport = page.getViewport({ scale });
-            tempCanvas.width = viewport.width;
-            tempCanvas.height = viewport.height;
-            await page.render({ canvasContext: ctx, viewport }).promise;
-
-            const blob = await new Promise(r => tempCanvas.toBlob(r, 'image/webp', quality));
-            zip.file(`page-${i}.webp`, blob);
-          }
-
-          docStatus.textContent = 'Zipping WebP files...';
-          const zipBlob = await zip.generateAsync({ type: 'blob' });
-          const zipUrl = URL.createObjectURL(zipBlob);
-
-          docOutputImg.style.display = 'none'; // No single preview for multi-page ZIPs
-          docDownloadLink.href = zipUrl;
-          docDownloadLink.download = 'pdf_pages_webp.zip';
-          docDownloadLink.textContent = 'Download All Pages (ZIP)';
-          docPreviewContainer.style.display = 'block';
-          docStatus.textContent = 'All pages converted and zipped successfully!';
-          convertDocBtn.disabled = false;
+          canvas.width = page.width * scale;
+          canvas.height = page.height * scale;
+          ctx.drawImage(page, 0, 0, canvas.width, canvas.height);
         }
-      } else if (imageObj) {
-        // Standard Image Conversion
-        tempCanvas.width = imageObj.width * scale;
-        tempCanvas.height = imageObj.height * scale;
-        ctx.drawImage(imageObj, 0, 0, tempCanvas.width, tempCanvas.height);
+        return canvas;
+      };
 
-        tempCanvas.toBlob((blob) => {
+      if (targetFormat === 'application/pdf') {
+        // Convert input pages to a single PDF
+        const { jsPDF } = window.jspdf;
+        let pdfDocOut = null;
+
+        for (let i = 0; i < loadedPages.length; i++) {
+          docStatus.textContent = `Adding page ${i + 1} of ${loadedPages.length} to PDF...`;
+          const canvas = await renderCanvas(loadedPages[i]);
+          const imgData = canvas.toDataURL('image/jpeg', quality);
+          const orientation = canvas.width > canvas.height ? 'l' : 'p';
+
+          if (i === 0) {
+            pdfDocOut = new jsPDF(orientation, 'px', [canvas.width, canvas.height]);
+            pdfDocOut.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+          } else {
+            pdfDocOut.addPage([canvas.width, canvas.height], orientation);
+            pdfDocOut.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+          }
+        }
+
+        const pdfBlob = pdfDocOut.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        docOutputImg.style.display = 'none';
+        docDownloadLink.href = pdfUrl;
+        docDownloadLink.download = 'converted.pdf';
+        docDownloadLink.textContent = 'Download PDF Document';
+        docPreviewContainer.style.display = 'block';
+        docStatus.textContent = 'PDF conversion complete!';
+      } else if (loadedPages.length === 1) {
+        // Single Image Export
+        const canvas = await renderCanvas(loadedPages[0]);
+        canvas.toBlob((blob) => {
           const url = URL.createObjectURL(blob);
           docOutputImg.src = url;
           docOutputImg.style.display = 'block';
           docDownloadLink.href = url;
-          docDownloadLink.download = 'converted.webp';
-          docDownloadLink.textContent = 'Download WebP';
+          docDownloadLink.download = `converted.${ext}`;
+          docDownloadLink.textContent = `Download ${ext.toUpperCase()}`;
           docPreviewContainer.style.display = 'block';
-          docStatus.textContent = 'Image converted successfully!';
-          convertDocBtn.disabled = false;
-        }, 'image/webp', quality);
+          docStatus.textContent = 'Conversion complete!';
+        }, targetFormat, quality);
+      } else {
+        // Multi-page ZIP Export
+        const zip = new JSZip();
+        for (let i = 0; i < loadedPages.length; i++) {
+          docStatus.textContent = `Converting page ${i + 1} of ${loadedPages.length}...`;
+          const canvas = await renderCanvas(loadedPages[i]);
+          const blob = await new Promise(r => canvas.toBlob(r, targetFormat, quality));
+          zip.file(`page-${i + 1}.${ext}`, blob);
+        }
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const zipUrl = URL.createObjectURL(zipBlob);
+        docOutputImg.style.display = 'none';
+        docDownloadLink.href = zipUrl;
+        docDownloadLink.download = `converted_pages_${ext}.zip`;
+        docDownloadLink.textContent = 'Download All Pages (ZIP)';
+        docPreviewContainer.style.display = 'block';
+        docStatus.textContent = 'All pages converted and zipped!';
       }
+
+      convertDocBtn.disabled = false;
     });
   </script>
 </body>
