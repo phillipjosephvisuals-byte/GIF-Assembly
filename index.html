@@ -5,13 +5,75 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Video to GIF & Multi-Format Document Converter</title>
   <style>
+    /* Top Navigation Bar */
+    .nav-bar {
+      position: sticky;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      z-index: 100;
+    }
+    .nav-brand {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #0f172a;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .nav-link {
+      text-decoration: none;
+      color: #475569;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 6px 14px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    .nav-link:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    .nav-link.active {
+      background: #eff6ff;
+      color: #2563eb;
+    }
+    .nav-link-synth {
+      background: linear-gradient(135deg, rgba(255, 42, 133, 0.1), rgba(0, 240, 255, 0.1));
+      border: 1px solid #ff2a85;
+      color: #ff2a85;
+      font-weight: 700;
+    }
+    .nav-link-synth:hover {
+      background: #ff2a85;
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(255, 42, 133, 0.4);
+    }
+
     body {
       font-family: system-ui, -apple-system, sans-serif;
-      max-width: 720px;
-      margin: 40px auto;
-      padding: 0 20px;
+      margin: 0;
+      padding: 0;
       background-color: #f9f9f9;
       color: #333;
+    }
+    .main-container {
+      max-width: 720px;
+      margin: 30px auto 40px auto;
+      padding: 0 20px;
     }
     .card {
       background: white;
@@ -190,91 +252,102 @@
 </head>
 <body>
 
-  <!-- SECTION 1: VIDEO TO GIF CONVERTER -->
-  <div class="card">
-    <h2>Video to GIF Converter</h2>
-    
-    <div class="field">
-      <label for="videoInput">Upload Video Files (Up to 3)</label>
-      <input type="file" id="videoInput" accept="video/*" multiple>
+  <!-- Top Navigation Bar -->
+  <nav class="nav-bar">
+    <a href="#" class="nav-brand">🛠 Studio Tools</a>
+    <div class="nav-links">
+      <a href="#" class="nav-link active">Media Converter</a>
+      <a href="SynthGen.html" class="nav-link nav-link-synth">🎹 Synthwave Studio</a>
     </div>
+  </nav>
 
-    <div id="clipList"></div>
-
-    <div id="meterPanel" class="meter-panel" style="display:none;">
-      <div id="statusIndicator" class="meter-status-indicator"></div>
-      <div class="meter-details">
-        <label>Total Frame Budget: <span id="frameBudgetLabel">0 / 100 Frames</span></label>
-        <div class="meter-bar-bg">
-          <div id="meterFill" class="meter-bar-fill"></div>
-        </div>
-      </div>
-    </div>
-
-    <button id="convertBtn" disabled>Convert Clips to GIF</button>
-    <div id="status" class="status-text"></div>
-
-    <div id="preview-container" class="preview-container">
-      <h3>Resulting GIF</h3>
-      <img id="gifOutput" alt="Generated GIF">
-      <a id="downloadLink" class="download-btn" download="output.gif">Download GIF</a>
-    </div>
-  </div>
-
-  <!-- SECTION 2: DOCUMENT & IMAGE CONVERTER -->
-  <div class="card">
-    <h2>Document & Image Converter</h2>
-    
-    <div class="field">
-      <label for="docInput">Upload File (.pdf, .jpg, .png, .tiff)</label>
-      <input type="file" id="docInput" accept="application/pdf, image/*, .tiff, .tif">
-    </div>
-
-    <div id="docPanel" class="doc-panel">
-      <div id="selectedFileName" style="font-weight: 600; margin-bottom: 12px; color: #475569;">Selected: -</div>
+  <div class="main-container">
+    <!-- SECTION 1: VIDEO TO GIF CONVERTER -->
+    <div class="card">
+      <h2>Video to GIF Converter</h2>
       
-      <div class="doc-row">
-        <div class="field">
-          <label for="formatSelect">Convert To</label>
-          <select id="formatSelect">
-            <option value="image/webp">WebP Images</option>
-            <option value="image/jpeg">JPEG Images</option>
-            <option value="image/png">PNG Images</option>
-            <option value="application/pdf">PDF Document</option>
-          </select>
-        </div>
-
-        <div class="size-badges-row">
-          <span class="badge badge-orig">Original: <span id="origSize">0 MB</span></span>
-          <span class="badge badge-est">Est. Output: <span id="estSize">0 MB</span></span>
-        </div>
-      </div>
-
       <div class="field">
-        <div class="slider-header">
-          <span>Compression Quality</span>
-          <span id="qualityVal">80%</span>
-        </div>
-        <input type="range" id="qualitySlider" min="10" max="100" value="80">
+        <label for="videoInput">Upload Video Files (Up to 3)</label>
+        <input type="file" id="videoInput" accept="video/*" multiple>
       </div>
 
-      <div class="field">
-        <div class="slider-header">
-          <span>Resolution / Scale</span>
-          <span id="scaleVal">100%</span>
+      <div id="clipList"></div>
+
+      <div id="meterPanel" class="meter-panel" style="display:none;">
+        <div id="statusIndicator" class="meter-status-indicator"></div>
+        <div class="meter-details">
+          <label>Total Frame Budget: <span id="frameBudgetLabel">0 / 100 Frames</span></label>
+          <div class="meter-bar-bg">
+            <div id="meterFill" class="meter-bar-fill"></div>
+          </div>
         </div>
-        <input type="range" id="scaleSlider" min="20" max="100" value="100">
       </div>
 
-      <button id="convertDocBtn" style="margin-top: 12px;">Convert File</button>
+      <button id="convertBtn" disabled>Convert Clips to GIF</button>
+      <div id="status" class="status-text"></div>
+
+      <div id="preview-container" class="preview-container">
+        <h3>Resulting GIF</h3>
+        <img id="gifOutput" alt="Generated GIF">
+        <a id="downloadLink" class="download-btn" download="output.gif">Download GIF</a>
+      </div>
     </div>
 
-    <div id="docStatus" class="status-text"></div>
+    <!-- SECTION 2: DOCUMENT & IMAGE CONVERTER -->
+    <div class="card">
+      <h2>Document & Image Converter</h2>
+      
+      <div class="field">
+        <label for="docInput">Upload File (.pdf, .jpg, .png, .tiff)</label>
+        <input type="file" id="docInput" accept="application/pdf, image/*, .tiff, .tif">
+      </div>
 
-    <div id="docPreviewContainer" class="preview-container">
-      <h3>Converted Result Preview</h3>
-      <img id="docOutputImg" alt="Converted Output">
-      <a id="docDownloadLink" class="download-btn" download="converted">Download Converted File</a>
+      <div id="docPanel" class="doc-panel">
+        <div id="selectedFileName" style="font-weight: 600; margin-bottom: 12px; color: #475569;">Selected: -</div>
+        
+        <div class="doc-row">
+          <div class="field">
+            <label for="formatSelect">Convert To</label>
+            <select id="formatSelect">
+              <option value="image/webp">WebP Images</option>
+              <option value="image/jpeg">JPEG Images</option>
+              <option value="image/png">PNG Images</option>
+              <option value="application/pdf">PDF Document</option>
+            </select>
+          </div>
+
+          <div class="size-badges-row">
+            <span class="badge badge-orig">Original: <span id="origSize">0 MB</span></span>
+            <span class="badge badge-est">Est. Output: <span id="estSize">0 MB</span></span>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="slider-header">
+            <span>Compression Quality</span>
+            <span id="qualityVal">80%</span>
+          </div>
+          <input type="range" id="qualitySlider" min="10" max="100" value="80">
+        </div>
+
+        <div class="field">
+          <div class="slider-header">
+            <span>Resolution / Scale</span>
+            <span id="scaleVal">100%</span>
+          </div>
+          <input type="range" id="scaleSlider" min="20" max="100" value="100">
+        </div>
+
+        <button id="convertDocBtn" style="margin-top: 12px;">Convert File</button>
+      </div>
+
+      <div id="docStatus" class="status-text"></div>
+
+      <div id="docPreviewContainer" class="preview-container">
+        <h3>Converted Result Preview</h3>
+        <img id="docOutputImg" alt="Converted Output">
+        <a id="docDownloadLink" class="download-btn" download="converted">Download Converted File</a>
+      </div>
     </div>
   </div>
 
@@ -552,7 +625,7 @@
     const docDownloadLink = document.getElementById('docDownloadLink');
 
     let currentDocFile = null;
-    let loadedPages = []; // Holds canvas frames for input file pages
+    let loadedPages = [];
 
     docInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
@@ -577,7 +650,6 @@
         }
         docStatus.textContent = `PDF Loaded (${loadedPages.length} Pages).`;
       } else if (ext === 'tiff' || ext === 'tif') {
-        // Parse TIFF files using UTIF.js
         const arrayBuffer = await file.arrayBuffer();
         const ifds = UTIF.decode(arrayBuffer);
         for (let i = 0; i < ifds.length; i++) {
@@ -594,7 +666,6 @@
         }
         docStatus.textContent = `TIFF Image Loaded (${loadedPages.length} Frames).`;
       } else {
-        // Standard PNG/JPG Image
         const img = new Image();
         img.src = URL.createObjectURL(file);
         await new Promise(r => img.onload = r);
@@ -628,7 +699,6 @@
       const scale = parseFloat(scaleSlider.value) / 100;
       const targetFormat = formatSelect.value;
 
-      // Estimate output size based on first page
       const tempCanvas = document.createElement('canvas');
       const ctx = tempCanvas.getContext('2d');
       const page1 = loadedPages[0];
@@ -645,7 +715,6 @@
       }
 
       if (targetFormat === 'application/pdf') {
-        // PDF output estimation
         const baseSize = tempCanvas.width * tempCanvas.height * 0.2 * quality * loadedPages.length;
         estSize.textContent = formatBytes(baseSize);
       } else {
@@ -688,7 +757,6 @@
       };
 
       if (targetFormat === 'application/pdf') {
-        // Convert input pages to a single PDF
         const { jsPDF } = window.jspdf;
         let pdfDocOut = null;
 
@@ -716,7 +784,6 @@
         docPreviewContainer.style.display = 'block';
         docStatus.textContent = 'PDF conversion complete!';
       } else if (loadedPages.length === 1) {
-        // Single Image Export
         const canvas = await renderCanvas(loadedPages[0]);
         canvas.toBlob((blob) => {
           const url = URL.createObjectURL(blob);
@@ -729,7 +796,6 @@
           docStatus.textContent = 'Conversion complete!';
         }, targetFormat, quality);
       } else {
-        // Multi-page ZIP Export
         const zip = new JSZip();
         for (let i = 0; i < loadedPages.length; i++) {
           docStatus.textContent = `Converting page ${i + 1} of ${loadedPages.length}...`;
