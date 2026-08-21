@@ -3,244 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Video to GIF & Multi-Format Document Converter</title>
-  <style>
-    /* Top Navigation Bar */
-    .nav-bar {
-      position: sticky;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: #ffffff;
-      border-bottom: 1px solid #e2e8f0;
-      padding: 12px 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-      z-index: 100;
-    }
-    .nav-brand {
-      font-weight: 700;
-      font-size: 1.05rem;
-      color: #0f172a;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .nav-links {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-    .nav-link {
-      text-decoration: none;
-      color: #475569;
-      font-weight: 600;
-      font-size: 0.9rem;
-      padding: 6px 14px;
-      border-radius: 6px;
-      transition: all 0.2s ease;
-    }
-    .nav-link:hover {
-      background: #f1f5f9;
-      color: #0f172a;
-    }
-    .nav-link.active {
-      background: #eff6ff;
-      color: #2563eb;
-    }
-    .nav-link-synth {
-      background: linear-gradient(135deg, rgba(255, 42, 133, 0.1), rgba(0, 240, 255, 0.1));
-      border: 1px solid #ff2a85;
-      color: #ff2a85;
-      font-weight: 700;
-    }
-    .nav-link-synth:hover {
-      background: #ff2a85;
-      color: #ffffff;
-      box-shadow: 0 0 12px rgba(255, 42, 133, 0.4);
-    }
-
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f9f9f9;
-      color: #333;
-    }
-    .main-container {
-      max-width: 720px;
-      margin: 30px auto 40px auto;
-      padding: 0 20px;
-    }
-    .card {
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      margin-bottom: 30px;
-    }
-    .field { margin-bottom: 16px; }
-    label { display: block; font-weight: 600; margin-bottom: 6px; }
-    input[type="file"], input[type="range"], select { 
-      width: 100%; 
-      box-sizing: border-box; 
-      padding: 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      background: white;
-    }
-
-    /* Video Trimmer Styles */
-    #clipList { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
-    .clip-card {
-      background: #f8fafc;
-      border: 2px dashed #cbd5e1;
-      border-radius: 8px;
-      padding: 12px;
-      cursor: grab;
-      user-select: none;
-    }
-    .clip-card.dragging { opacity: 0.5; border-color: #2563eb; }
-    .clip-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-    .filmstrip-container {
-      position: relative;
-      height: 50px;
-      background: #000;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-    .filmstrip-canvas { width: 100%; height: 100%; display: block; }
-    .trimmer-overlay {
-      position: absolute;
-      top: 0; bottom: 0;
-      left: 0%; width: 100%;
-      background: rgba(37, 99, 235, 0.3);
-      border-left: 4px solid #2563eb;
-      border-right: 4px solid #2563eb;
-      box-sizing: border-box;
-      cursor: move;
-    }
-    .handle {
-      position: absolute;
-      top: 0; bottom: 0;
-      width: 10px;
-      background: #1e40af;
-      cursor: ew-resize;
-    }
-    .handle-left { left: -5px; }
-    .handle-right { right: -5px; }
-
-    /* Meter Panel */
-    .meter-panel {
-      background: #f1f5f9;
-      padding: 16px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .meter-status-indicator {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background-color: #16a34a;
-      flex-shrink: 0;
-    }
-    .meter-details { flex-grow: 1; }
-    .meter-bar-bg {
-      height: 10px;
-      background-color: #e2e8f0;
-      border-radius: 5px;
-      overflow: hidden;
-      margin-top: 6px;
-    }
-    .meter-bar-fill {
-      height: 100%;
-      background-color: #2563eb;
-      width: 0%;
-      transition: width 0.2s ease, background-color 0.2s ease;
-    }
-
-    /* Converter Section UI Layout */
-    .doc-panel {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      padding: 20px;
-      border-radius: 8px;
-      margin-top: 16px;
-      display: none;
-    }
-    .doc-row {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-    .doc-row .field { flex: 1; margin-bottom: 0; }
-    
-    .size-badges-row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-    .badge {
-      display: inline-block;
-      padding: 8px 14px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-    .badge-orig { background: #e2e8f0; color: #334155; }
-    .badge-est { background: #2563eb; color: white; }
-
-    .slider-header {
-      display: flex;
-      justify-content: space-between;
-      font-weight: 600;
-      font-size: 0.9rem;
-      margin-bottom: 4px;
-    }
-
-    button {
-      background-color: #2563eb;
-      color: white;
-      border: none;
-      padding: 12px 18px;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-      width: 100%;
-      font-size: 1rem;
-    }
-    button:disabled { background-color: #ccc; cursor: not-allowed; }
-    .status-text { margin-top: 16px; font-weight: bold; color: #555; }
-    .preview-container { margin-top: 24px; display: none; }
-    img { display: block; margin-top: 10px; border-radius: 8px; max-width: 100%; }
-    .download-btn {
-      display: inline-block;
-      margin-top: 12px;
-      background-color: #28a745;
-      color: white;
-      text-decoration: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      font-weight: 600;
-      text-align: center;
-    }
-  </style>
-
-  <!-- External Libraries -->
+  <title>OmniConvert | Client-Side Video & Document Engine</title>
+  
+  <!-- Fonts & External Libraries -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -249,113 +18,648 @@
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
   </script>
+
+  <style>
+    :root {
+      --indigo-primary: #4338ca;
+      --indigo-accent: #6366f1;
+      --indigo-light: #e0e7ff;
+      --indigo-bg-tint: #f5f7ff;
+      --slate-50: #f8fafc;
+      --slate-200: #e2e8f0;
+      --slate-500: #64748b;
+      --slate-700: #334155;
+      --slate-900: #0f172a;
+      
+      --glass-bg: rgba(255, 255, 255, 0.65);
+      --glass-border: rgba(255, 255, 255, 0.8);
+      --glass-shadow: 0 20px 40px -15px rgba(67, 56, 202, 0.08), 0 0 1px 1px rgba(255, 255, 255, 0.9) inset;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 50% 0%, #e0e7ff 0%, #f5f7ff 35%, #ffffff 100%);
+      color: var(--slate-900);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    /* Aero Glass Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(255, 255, 255, 0.7);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--indigo-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-pill {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      background: var(--indigo-light);
+      color: var(--indigo-primary);
+      border-radius: 12px;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+    .nav-actions { display: flex; gap: 16px; align-items: center; }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 48px 24px 32px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .hero-tagline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--indigo-primary);
+      background: rgba(224, 231, 255, 0.6);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(8px);
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--slate-900);
+      margin-bottom: 12px;
+    }
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--slate-500);
+    }
+
+    /* Core Tool Container (Aero Glass Aesthetic) */
+    .tool-wrapper {
+      max-width: 780px;
+      width: 100%;
+      margin: 0 auto 64px;
+      padding: 0 16px;
+    }
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      box-shadow: var(--glass-shadow);
+      padding: 32px;
+      position: relative;
+    }
+
+    /* Navigation Tabs */
+    .tool-tabs {
+      display: flex;
+      gap: 8px;
+      background: rgba(226, 232, 240, 0.5);
+      padding: 4px;
+      border-radius: 10px;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      flex: 1;
+      border: none;
+      padding: 10px 16px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      background: transparent;
+      color: var(--slate-500);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .tab-btn.active {
+      background: #ffffff;
+      color: var(--indigo-primary);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Upload Target Box */
+    .dropzone {
+      border: 2px dashed rgba(99, 102, 241, 0.35);
+      background: rgba(245, 247, 255, 0.4);
+      border-radius: 12px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .dropzone:hover {
+      border-color: var(--indigo-accent);
+      background: rgba(224, 231, 255, 0.3);
+    }
+    .dropzone input[type="file"] {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .dropzone-label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--slate-700);
+    }
+    .dropzone-sub {
+      font-size: 0.8rem;
+      color: var(--slate-500);
+      margin-top: 4px;
+    }
+
+    /* Video Trim Controls */
+    #clipList { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+    .clip-card {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      padding: 12px;
+      cursor: grab;
+    }
+    .clip-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--slate-700);
+    }
+    .filmstrip-container {
+      position: relative;
+      height: 48px;
+      background: #000;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .filmstrip-canvas { width: 100%; height: 100%; display: block; }
+    .trimmer-overlay {
+      position: absolute;
+      top: 0; bottom: 0; left: 0; width: 100%;
+      background: rgba(99, 102, 241, 0.3);
+      border-left: 3px solid var(--indigo-primary);
+      border-right: 3px solid var(--indigo-primary);
+      cursor: move;
+    }
+    .handle {
+      position: absolute;
+      top: 0; bottom: 0; width: 8px;
+      background: var(--indigo-primary);
+      cursor: ew-resize;
+    }
+    .handle-left { left: -4px; }
+    .handle-right { right: -4px; }
+
+    /* Budget & Telemetry Panel */
+    .meter-panel {
+      background: rgba(241, 245, 249, 0.6);
+      border: 1px solid var(--slate-200);
+      padding: 14px 18px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .indicator-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #16a34a;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+    }
+    .indicator-dot.exceeded {
+      background: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+    }
+    .meter-bar {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .meter-bar-fill {
+      height: 100%;
+      background: var(--indigo-accent);
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+
+    /* Form Controls */
+    .field-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      margin-bottom: 16px;
+    }
+    .field-row .field { flex: 1; margin-bottom: 0; }
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--slate-700);
+      margin-bottom: 6px;
+    }
+    select, input[type="range"] {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    select {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--slate-200);
+      padding: 10px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--slate-700);
+    }
+    .slider-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--slate-700);
+      margin-bottom: 4px;
+    }
+
+    /* Badges */
+    .badge-group { display: flex; gap: 8px; }
+    .badge {
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .badge-neutral { background: var(--slate-200); color: var(--slate-700); }
+    .badge-brand { background: var(--indigo-light); color: var(--indigo-primary); }
+
+    /* Action Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--indigo-primary) 0%, #3730a3 100%);
+      color: white;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(67, 56, 202, 0.25);
+      transition: all 0.2s ease;
+    }
+    .btn-primary:hover:not(:disabled) {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+    .btn-primary:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid var(--slate-200);
+      color: var(--slate-700);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .status-text {
+      margin-top: 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--slate-500);
+      text-align: center;
+    }
+    .preview-box {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--slate-200);
+      text-align: center;
+      display: none;
+    }
+    .preview-box img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin: 12px auto;
+      display: block;
+      border: 1px solid var(--slate-200);
+    }
+
+    /* Pricing Section */
+    .pricing-section {
+      max-width: 880px;
+      margin: 0 auto 64px;
+      padding: 0 20px;
+      text-align: center;
+    }
+    .pricing-header { margin-bottom: 40px; }
+    .pricing-header h2 { font-size: 1.8rem; color: var(--slate-900); font-weight: 700; }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      text-align: left;
+    }
+    .price-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: var(--glass-shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .price-card.featured {
+      border: 2px solid var(--indigo-accent);
+      position: relative;
+    }
+    .tier-badge {
+      position: absolute;
+      top: -12px;
+      right: 24px;
+      background: var(--indigo-primary);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .price-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin: 12px 0 20px;
+    }
+    .price-value span { font-size: 0.95rem; color: var(--slate-500); font-weight: 400; }
+    .feature-list { list-style: none; margin-bottom: 24px; }
+    .feature-list li {
+      font-size: 0.9rem;
+      color: var(--slate-700);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .feature-list li::before {
+      content: "✓";
+      color: var(--indigo-primary);
+      font-weight: 700;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: auto;
+      border-top: 1px solid var(--slate-200);
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(8px);
+      padding: 24px 32px;
+      font-size: 0.85rem;
+      color: var(--slate-500);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-links { display: flex; gap: 16px; }
+    .footer-links a { color: var(--slate-500); text-decoration: none; }
+    .footer-links a:hover { color: var(--indigo-primary); }
+  </style>
 </head>
 <body>
 
-  <!-- Top Navigation Bar -->
-  <nav class="nav-bar">
-    <a href="#" class="nav-brand">🛠 Studio Tools</a>
-    <div class="nav-links">
-      <a href="#" class="nav-link active">Media Converter</a>
-      <a href="SynthGen.html" class="nav-link nav-link-synth">🎹 Synthwave Studio</a>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="brand">
+      OmniConvert
+      <span class="brand-pill">Client Engine</span>
+    </div>
+    <div class="nav-actions">
+      <button class="btn-outline" onclick="document.getElementById('pricing').scrollIntoView({behavior: 'smooth'})">Plans & Upgrades</button>
     </div>
   </nav>
 
-  <div class="main-container">
-    <!-- SECTION 1: VIDEO TO GIF CONVERTER -->
-    <div class="card">
-      <h2>Video to GIF Converter</h2>
-      
-      <div class="field">
-        <label for="videoInput">Upload Video Files (Up to 3)</label>
-        <input type="file" id="videoInput" accept="video/*" multiple>
+  <!-- Hero -->
+  <header class="hero">
+    <div class="hero-tagline">
+      🔒 100% In-Browser & Private Sandbox
+    </div>
+    <h1>Professional File Conversion.<br>Zero Cloud Uploads.</h1>
+    <p>Convert videos to precise 410px GIFs or batch-process PDFs, TIFFs, and images entirely on your local machine.</p>
+  </header>
+
+  <!-- Core Tool Section -->
+  <main class="tool-wrapper">
+    <div class="glass-card">
+      <!-- Tabs -->
+      <div class="tool-tabs">
+        <button class="tab-btn active" id="tabVideoBtn" onclick="switchTab('video')">Video to 410px GIF</button>
+        <button class="tab-btn" id="tabDocBtn" onclick="switchTab('doc')">Document & Image Suite</button>
       </div>
 
-      <div id="clipList"></div>
+      <!-- VIEW 1: VIDEO TO GIF -->
+      <div id="viewVideo">
+        <div class="dropzone">
+          <input type="file" id="videoInput" accept="video/*" multiple>
+          <div class="dropzone-label">Drop video files here, or browse</div>
+          <div class="dropzone-sub">Upload up to 3 clips (MP4, WebM, MOV)</div>
+        </div>
 
-      <div id="meterPanel" class="meter-panel" style="display:none;">
-        <div id="statusIndicator" class="meter-status-indicator"></div>
-        <div class="meter-details">
-          <label>Total Frame Budget: <span id="frameBudgetLabel">0 / 100 Frames</span></label>
-          <div class="meter-bar-bg">
-            <div id="meterFill" class="meter-bar-fill"></div>
+        <div id="clipList"></div>
+
+        <div id="meterPanel" class="meter-panel" style="display:none;">
+          <div id="statusIndicator" class="indicator-dot"></div>
+          <div style="flex-grow: 1;">
+            <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:600;">
+              <span>Frame Budget Allocation</span>
+              <span id="frameBudgetLabel">0 / 100 Frames</span>
+            </div>
+            <div class="meter-bar">
+              <div id="meterFill" class="meter-bar-fill"></div>
+            </div>
           </div>
+        </div>
+
+        <button id="convertBtn" class="btn-primary" disabled>Generate 410px GIF</button>
+        <div id="status" class="status-text"></div>
+
+        <div id="previewContainer" class="preview-box">
+          <img id="gifOutput" alt="Generated GIF">
+          <a id="downloadLink" class="btn-primary" style="display:inline-block; width:auto; margin-top:8px; text-decoration:none;" download="output.gif">Download GIF</a>
         </div>
       </div>
 
-      <button id="convertBtn" disabled>Convert Clips to GIF</button>
-      <div id="status" class="status-text"></div>
+      <!-- VIEW 2: DOCUMENT & IMAGE SUITE -->
+      <div id="viewDoc" style="display: none;">
+        <div class="dropzone">
+          <input type="file" id="docInput" accept="application/pdf, image/*, .tiff, .tif">
+          <div class="dropzone-label">Drop PDF, TIFF, or image here</div>
+          <div class="dropzone-sub">Supports .pdf, .tiff, .tif, .png, .jpg</div>
+        </div>
 
-      <div id="preview-container" class="preview-container">
-        <h3>Resulting GIF</h3>
-        <img id="gifOutput" alt="Generated GIF">
-        <a id="downloadLink" class="download-btn" download="output.gif">Download GIF</a>
-      </div>
-    </div>
+        <div id="docPanel" style="display: none;">
+          <div id="selectedFileName" style="font-size:0.85rem; font-weight:600; color:var(--slate-700); margin-bottom:14px;">Selected: -</div>
+          
+          <div class="field-row">
+            <div class="field">
+              <label for="formatSelect">Target Format</label>
+              <select id="formatSelect">
+                <option value="image/webp">WebP Images</option>
+                <option value="image/jpeg">JPEG Images</option>
+                <option value="image/png">PNG Images</option>
+                <option value="application/pdf">PDF Document</option>
+              </select>
+            </div>
+            <div class="badge-group" style="margin-bottom: 16px;">
+              <span class="badge badge-neutral">Original: <span id="origSize">0 KB</span></span>
+              <span class="badge badge-brand">Est: <span id="estSize">0 KB</span></span>
+            </div>
+          </div>
 
-    <!-- SECTION 2: DOCUMENT & IMAGE CONVERTER -->
-    <div class="card">
-      <h2>Document & Image Converter</h2>
-      
-      <div class="field">
-        <label for="docInput">Upload File (.pdf, .jpg, .png, .tiff)</label>
-        <input type="file" id="docInput" accept="application/pdf, image/*, .tiff, .tif">
-      </div>
-
-      <div id="docPanel" class="doc-panel">
-        <div id="selectedFileName" style="font-weight: 600; margin-bottom: 12px; color: #475569;">Selected: -</div>
-        
-        <div class="doc-row">
           <div class="field">
-            <label for="formatSelect">Convert To</label>
-            <select id="formatSelect">
-              <option value="image/webp">WebP Images</option>
-              <option value="image/jpeg">JPEG Images</option>
-              <option value="image/png">PNG Images</option>
-              <option value="application/pdf">PDF Document</option>
-            </select>
+            <div class="slider-meta">
+              <span>Quality Compression</span>
+              <span id="qualityVal">80%</span>
+            </div>
+            <input type="range" id="qualitySlider" min="10" max="100" value="80">
           </div>
 
-          <div class="size-badges-row">
-            <span class="badge badge-orig">Original: <span id="origSize">0 MB</span></span>
-            <span class="badge badge-est">Est. Output: <span id="estSize">0 MB</span></span>
+          <div class="field">
+            <div class="slider-meta">
+              <span>Resolution / Scale</span>
+              <span id="scaleVal">100%</span>
+            </div>
+            <input type="range" id="scaleSlider" min="20" max="100" value="100">
           </div>
+
+          <button id="convertDocBtn" class="btn-primary" style="margin-top: 12px;">Convert Document</button>
         </div>
 
-        <div class="field">
-          <div class="slider-header">
-            <span>Compression Quality</span>
-            <span id="qualityVal">80%</span>
-          </div>
-          <input type="range" id="qualitySlider" min="10" max="100" value="80">
-        </div>
+        <div id="docStatus" class="status-text"></div>
 
-        <div class="field">
-          <div class="slider-header">
-            <span>Resolution / Scale</span>
-            <span id="scaleVal">100%</span>
-          </div>
-          <input type="range" id="scaleSlider" min="20" max="100" value="100">
+        <div id="docPreviewContainer" class="preview-box">
+          <img id="docOutputImg" alt="Converted Result">
+          <a id="docDownloadLink" class="btn-primary" style="display:inline-block; width:auto; margin-top:8px; text-decoration:none;" download="converted">Download Result</a>
         </div>
-
-        <button id="convertDocBtn" style="margin-top: 12px;">Convert File</button>
       </div>
 
-      <div id="docStatus" class="status-text"></div>
+    </div>
+  </main>
 
-      <div id="docPreviewContainer" class="preview-container">
-        <h3>Converted Result Preview</h3>
-        <img id="docOutputImg" alt="Converted Output">
-        <a id="docDownloadLink" class="download-btn" download="converted">Download Converted File</a>
+  <!-- Pricing Comparison Grid -->
+  <section class="pricing-section" id="pricing">
+    <div class="pricing-header">
+      <h2>Simple, Transparent Licensing</h2>
+      <p style="color: var(--slate-500); font-size: 0.95rem; margin-top: 4px;">Unlimited speed with direct client processing. No subscription traps.</p>
+    </div>
+
+    <div class="pricing-grid">
+      <!-- Free Plan -->
+      <div class="price-card">
+        <div>
+          <h3 style="font-weight: 600;">Starter Sandbox</h3>
+          <p style="font-size: 0.85rem; color: var(--slate-500); margin-top: 2px;">Essential quick conversions</p>
+          <div class="price-value">$0 <span>/ free forever</span></div>
+          <ul class="feature-list">
+            <li>100 Frame GIF Budget</li>
+            <li>Up to 3-clip video sequence</li>
+            <li>PDF / TIFF to WebP (Single page)</li>
+            <li>Live File Compression Sliders</li>
+            <li>100% Client-Side Privacy</li>
+          </ul>
+        </div>
+        <button class="btn-outline" style="width: 100%;" disabled>Current Active Plan</button>
+      </div>
+
+      <!-- Pro Lifetime Plan -->
+      <div class="price-card featured">
+        <div class="tier-badge">Unlimited Power</div>
+        <div>
+          <h3 style="font-weight: 600;">Professional Pro</h3>
+          <p style="font-size: 0.85rem; color: var(--slate-500); margin-top: 2px;">For content power-users</p>
+          <div class="price-value">$19.99 <span>/ lifetime access</span></div>
+          <ul class="feature-list">
+            <li><strong>500 Frame GIF Budget</strong> (High FPS)</li>
+            <li>Unlimited Multi-Page PDF & TIFF to ZIP</li>
+            <li>Unlimited Batch Image Conversions</li>
+            <li>No File Size Caps</li>
+            <li>Single License Key Activation</li>
+          </ul>
+        </div>
+        <button class="btn-primary" onclick="alert('Payment gateway integration will unlock pro tier via license key.')">Get Pro Access</button>
       </div>
     </div>
-  </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div>© 2026 OmniConvert. Fully client-side software.</div>
+    <div class="footer-links">
+      <a href="#privacy">Privacy Policy</a>
+      <a href="#terms">Terms of Service</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </footer>
 
   <canvas id="hiddenCanvas" style="display:none;"></canvas>
 
   <script>
+    /* Tab Switching Logic */
+    function switchTab(type) {
+      const tabVideoBtn = document.getElementById('tabVideoBtn');
+      const tabDocBtn = document.getElementById('tabDocBtn');
+      const viewVideo = document.getElementById('viewVideo');
+      const viewDoc = document.getElementById('viewDoc');
+
+      if (type === 'video') {
+        tabVideoBtn.classList.add('active');
+        tabDocBtn.classList.remove('active');
+        viewVideo.style.display = 'block';
+        viewDoc.style.display = 'none';
+      } else {
+        tabDocBtn.classList.add('active');
+        tabVideoBtn.classList.remove('active');
+        viewDoc.style.display = 'block';
+        viewVideo.style.display = 'none';
+      }
+    }
+
     /* =========================================================
-       SECTION 1: VIDEO TO GIF CONVERTER LOGIC
+       SECTION 1: VIDEO TO GIF ENGINE
        ========================================================= */
     const MAX_FRAMES = 100;
     const TARGET_FPS = 10;
@@ -369,7 +673,7 @@
     const convertBtn = document.getElementById('convertBtn');
     const status = document.getElementById('status');
     const hiddenCanvas = document.getElementById('hiddenCanvas');
-    const previewContainer = document.getElementById('preview-container');
+    const previewContainer = document.getElementById('previewContainer');
     const gifOutput = document.getElementById('gifOutput');
     const downloadLink = document.getElementById('downloadLink');
 
@@ -440,7 +744,7 @@
       const ctx = canvas.getContext('2d');
       const rect = canvas.getBoundingClientRect();
       canvas.width = rect.width || 600;
-      canvas.height = rect.height || 50;
+      canvas.height = rect.height || 48;
 
       const thumbCount = 8;
       const thumbWidth = canvas.width / thumbCount;
@@ -542,25 +846,25 @@
       const totalFramesNeeded = Math.round(totalSeconds * TARGET_FPS);
       const percentage = Math.min(100, Math.round((totalFramesNeeded / MAX_FRAMES) * 100));
 
-      frameBudgetLabel.textContent = `${totalFramesNeeded} / ${MAX_FRAMES} Frames (${totalSeconds.toFixed(1)}s total)`;
+      frameBudgetLabel.textContent = `${totalFramesNeeded} / ${MAX_FRAMES} Frames (${totalSeconds.toFixed(1)}s)`;
       meterFill.style.width = `${percentage}%`;
 
       if (totalFramesNeeded <= MAX_FRAMES) {
-        statusIndicator.style.backgroundColor = '#16a34a';
-        meterFill.style.backgroundColor = '#2563eb';
+        statusIndicator.classList.remove('exceeded');
+        meterFill.style.backgroundColor = 'var(--indigo-accent)';
         convertBtn.disabled = false;
-        status.textContent = 'Ready to convert.';
+        status.textContent = 'Configuration ready.';
       } else {
-        statusIndicator.style.backgroundColor = '#dc2626';
+        statusIndicator.classList.add('exceeded');
         meterFill.style.backgroundColor = '#dc2626';
         convertBtn.disabled = true;
-        status.textContent = 'Selected sections exceed frame budget. Shrink clip windows.';
+        status.textContent = 'Selection exceeds 100-frame budget. Trim clip handles.';
       }
     }
 
     convertBtn.addEventListener('click', async () => {
       convertBtn.disabled = true;
-      status.textContent = 'Processing frames...';
+      status.textContent = 'Processing frames locally...';
       previewContainer.style.display = 'none';
 
       const firstVideo = clips[0].video;
@@ -598,7 +902,7 @@
         gifOutput.src = gifUrl;
         downloadLink.href = gifUrl;
         previewContainer.style.display = 'block';
-        status.textContent = 'Conversion complete!';
+        status.textContent = 'Render complete.';
         convertBtn.disabled = false;
         URL.revokeObjectURL(workerUrl);
       });
@@ -606,7 +910,7 @@
     });
 
     /* =========================================================
-       SECTION 2: DOCUMENT & IMAGE CONVERTER (PDF, TIFF, IMAGES)
+       SECTION 2: DOCUMENT & IMAGE ENGINE
        ========================================================= */
     const docInput = document.getElementById('docInput');
     const docPanel = document.getElementById('docPanel');
@@ -636,7 +940,7 @@
       origSize.textContent = formatBytes(file.size);
       docPanel.style.display = 'block';
       docPreviewContainer.style.display = 'none';
-      docStatus.textContent = 'Parsing file...';
+      docStatus.textContent = 'Loading binary data...';
 
       loadedPages = [];
       const ext = file.name.split('.').pop().toLowerCase();
@@ -664,7 +968,7 @@
           ctx.putImageData(imgData, 0, 0);
           loadedPages.push(canvas);
         }
-        docStatus.textContent = `TIFF Image Loaded (${loadedPages.length} Frames).`;
+        docStatus.textContent = `TIFF Loaded (${loadedPages.length} Frames).`;
       } else {
         const img = new Image();
         img.src = URL.createObjectURL(file);
@@ -732,7 +1036,7 @@
 
     convertDocBtn.addEventListener('click', async () => {
       convertDocBtn.disabled = true;
-      docStatus.textContent = 'Converting file...';
+      docStatus.textContent = 'Converting data...';
       docPreviewContainer.style.display = 'none';
 
       const quality = parseFloat(qualitySlider.value) / 100;
@@ -761,7 +1065,7 @@
         let pdfDocOut = null;
 
         for (let i = 0; i < loadedPages.length; i++) {
-          docStatus.textContent = `Adding page ${i + 1} of ${loadedPages.length} to PDF...`;
+          docStatus.textContent = `Rendering page ${i + 1} of ${loadedPages.length}...`;
           const canvas = await renderCanvas(loadedPages[i]);
           const imgData = canvas.toDataURL('image/jpeg', quality);
           const orientation = canvas.width > canvas.height ? 'l' : 'p';
@@ -782,7 +1086,7 @@
         docDownloadLink.download = 'converted.pdf';
         docDownloadLink.textContent = 'Download PDF Document';
         docPreviewContainer.style.display = 'block';
-        docStatus.textContent = 'PDF conversion complete!';
+        docStatus.textContent = 'PDF conversion complete.';
       } else if (loadedPages.length === 1) {
         const canvas = await renderCanvas(loadedPages[0]);
         canvas.toBlob((blob) => {
@@ -793,17 +1097,18 @@
           docDownloadLink.download = `converted.${ext}`;
           docDownloadLink.textContent = `Download ${ext.toUpperCase()}`;
           docPreviewContainer.style.display = 'block';
-          docStatus.textContent = 'Conversion complete!';
+          docStatus.textContent = 'Export complete.';
         }, targetFormat, quality);
       } else {
         const zip = new JSZip();
         for (let i = 0; i < loadedPages.length; i++) {
-          docStatus.textContent = `Converting page ${i + 1} of ${loadedPages.length}...`;
+          docStatus.textContent = `Rendering page ${i + 1} of ${loadedPages.length}...`;
           const canvas = await renderCanvas(loadedPages[i]);
           const blob = await new Promise(r => canvas.toBlob(r, targetFormat, quality));
           zip.file(`page-${i + 1}.${ext}`, blob);
         }
 
+        docStatus.textContent = 'Archiving ZIP bundle...';
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const zipUrl = URL.createObjectURL(zipBlob);
         docOutputImg.style.display = 'none';
@@ -811,7 +1116,7 @@
         docDownloadLink.download = `converted_pages_${ext}.zip`;
         docDownloadLink.textContent = 'Download All Pages (ZIP)';
         docPreviewContainer.style.display = 'block';
-        docStatus.textContent = 'All pages converted and zipped!';
+        docStatus.textContent = 'Archive ready.';
       }
 
       convertDocBtn.disabled = false;
