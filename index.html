@@ -10,7 +10,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <!-- Optimized gif.js with NeuQuant integrated in main lib -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -79,7 +78,26 @@
       font-weight: 600;
       letter-spacing: 0.05em;
     }
-    .nav-actions { display: flex; gap: 16px; align-items: center; }
+    .nav-actions { display: flex; gap: 12px; align-items: center; }
+
+    /* Offline Status Badge */
+    .offline-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+    .offline-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+    }
 
     .hero {
       text-align: center;
@@ -177,10 +195,10 @@
     .dropzone-label { font-weight: 600; font-size: 0.95rem; color: var(--slate-700); }
     .dropzone-sub { font-size: 0.8rem; color: var(--slate-500); margin-top: 4px; }
 
-    /* Stacked Video Trimmer - Stacked Above Dropzone when loaded */
+    /* Video Trimmer */
     #clipList { 
       display: flex; 
-      flex-direction: column-reverse; /* Newest on top */
+      flex-direction: column-reverse;
       gap: 16px; 
       margin-bottom: 20px; 
     }
@@ -200,7 +218,7 @@
       font-weight: 600;
       margin-bottom: 8px;
       color: var(--slate-700);
-      cursor: grab; /* Header is the drag handle for the card */
+      cursor: grab;
     }
     .filmstrip-container {
       position: relative;
@@ -208,7 +226,7 @@
       background: #000;
       border-radius: 6px;
       overflow: hidden;
-      cursor: default; /* Trimmer itself isn't draggable */
+      cursor: default;
     }
     .filmstrip-canvas { width: 100%; height: 100%; display: block; }
     .trimmer-overlay {
@@ -216,36 +234,31 @@
       top: 0; bottom: 0; left: 0; width: 100%;
       background: rgba(99, 102, 241, 0.3);
       cursor: move;
-      /* Pass clicks to handles */
       pointer-events: auto;
     }
     
-    /* Optimized Handles */
     .handle {
       position: absolute;
-      top: -4px; /* Slightly larger targets */
+      top: -4px;
       bottom: -4px;
-      width: 14px; /* Larger targets */
+      width: 14px;
       background: var(--indigo-primary);
       border-radius: 4px;
       cursor: ew-resize;
       z-index: 10;
       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      /* Prevent parent drag */
       pointer-events: auto;
     }
     .handle-left { left: -7px; }
     .handle-right { right: -7px; }
-    
-    /* Visually distinct handle center */
     .handle::after {
-        content: '';
-        position: absolute;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        width: 2px; height: 12px;
-        background: rgba(255,255,255,0.5);
-        border-radius: 1px;
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px; height: 12px;
+      background: rgba(255,255,255,0.5);
+      border-radius: 1px;
     }
 
     /* Meter Panel */
@@ -322,7 +335,7 @@
       margin-bottom: 4px;
     }
 
-    .badge-group { display: flex; gap: 8px; }
+    .badge-group { display: flex; gap: 8px; flex-wrap: wrap; }
     .badge {
       font-size: 0.8rem;
       font-weight: 600;
@@ -470,9 +483,14 @@
   <nav class="navbar">
     <div class="brand">
       OmniConvert
-      <span class="brand-pill">Phase 2 Engine</span>
+      <span class="brand-pill">Client Engine</span>
     </div>
     <div class="nav-actions">
+      <!-- Phase 3 Step 9: Offline Ready Status Indicator -->
+      <div id="offlineBadge" class="offline-badge">
+        <span class="offline-dot"></span>
+        <span id="offlineStatusText">Caching Offline...</span>
+      </div>
       <button class="btn-outline" onclick="document.getElementById('pricing').scrollIntoView({behavior: 'smooth'})">Plans & Upgrades</button>
     </div>
   </nav>
@@ -480,10 +498,10 @@
   <!-- Hero -->
   <header class="hero">
     <div class="hero-tagline">
-      🔒 High-Fidelity Client-Side Processing
+      🔒 100% Client-Side Engine • Works Offline
     </div>
     <h1>Professional File Conversion.<br>Zero Cloud Uploads.</h1>
-    <p>Convert video sequences to 480p GIFs (up to 20s) or process high-res PDFs and multi-page TIFFs in local memory.</p>
+    <p>Convert video sequences to 480p GIFs or batch-convert up to 50 images, PDFs, and TIFFs into an optimized ZIP.</p>
   </header>
 
   <!-- Core Tool Section -->
@@ -491,12 +509,11 @@
     <div class="glass-card">
       <div class="tool-tabs">
         <button class="tab-btn active" id="tabVideoBtn" onclick="switchTab('video')">Video to 480p GIF</button>
-        <button class="tab-btn" id="tabDocBtn" onclick="switchTab('doc')">Document & Image Suite</button>
+        <button class="tab-btn" id="tabDocBtn" onclick="switchTab('doc')">Document & Batch Image Suite</button>
       </div>
 
       <!-- VIEW 1: VIDEO TO GIF -->
       <div id="viewVideo">
-        <!-- clips stack above the dropzone -->
         <div id="clipList"></div>
 
         <div class="dropzone" id="videoDropzone">
@@ -518,7 +535,6 @@
           </div>
         </div>
 
-        <!-- NEW: Duration Gating Slider (Phase 2 Step 4) -->
         <div class="field" id="durationGatingField" style="display:none; margin-top: 20px;">
             <div class="slider-meta">
               <label for="durationGatingSlider">Target Max GIF Duration</label>
@@ -540,12 +556,12 @@
         </div>
       </div>
 
-      <!-- VIEW 2: DOCUMENT & IMAGE SUITE -->
+      <!-- VIEW 2: DOCUMENT & BATCH IMAGE SUITE (Phase 2 Step 6: 50-File Batch) -->
       <div id="viewDoc" style="display: none;">
         <div class="dropzone">
-          <input type="file" id="docInput" accept="application/pdf, image/*, .tiff, .tif">
-          <div class="dropzone-label">Drop PDF, multi-page TIFF, or image here</div>
-          <div class="dropzone-sub">Supports .pdf, multi-frame .tiff/.tif, .png, .jpg, .webp</div>
+          <input type="file" id="docInput" accept="application/pdf, image/*, .tiff, .tif" multiple>
+          <div class="dropzone-label">Drop files here, or browse (Up to 50 files)</div>
+          <div class="dropzone-sub">Supports batch .jpg, .png, .webp, multi-page .tiff, and .pdf</div>
         </div>
 
         <div id="docPanel" style="display: none;">
@@ -562,8 +578,8 @@
               </select>
             </div>
             <div class="badge-group" style="margin-bottom: 16px;">
-              <span class="badge badge-neutral">Original: <span id="origSize">0 KB</span></span>
-              <span class="badge badge-brand">Est: <span id="estSize">0 KB</span></span>
+              <span class="badge badge-neutral">Original Total: <span id="origSize">0 KB</span></span>
+              <span class="badge badge-brand">Est. Total: <span id="estSize">0 KB</span></span>
             </div>
           </div>
 
@@ -592,7 +608,7 @@
             <input type="range" id="scaleSlider" min="20" max="200" value="100">
           </div>
 
-          <button id="convertDocBtn" class="btn-primary" style="margin-top: 12px;">Convert Document</button>
+          <button id="convertDocBtn" class="btn-primary" style="margin-top: 12px;">Convert All to Batch ZIP</button>
         </div>
 
         <div id="docStatus" class="status-text"></div>
@@ -621,10 +637,10 @@
           <div class="price-value">$0 <span>/ free forever</span></div>
           <ul class="feature-list">
             <li>20s GIF Duration Budget (Stacked)</li>
-            <li>Up to 3-clip reorderable sequence</li>
+            <li>Up to 50 Image Batch Resize to ZIP</li>
             <li>Optimized 480p GIF Resolution</li>
-            <li>NeuQuant Color Optimization</li>
-            <li>TIFF & High-DPI PDF Suite</li>
+            <li>Multi-Page TIFF & Supersampled PDF</li>
+            <li>100% Offline Capable via Service Worker</li>
           </ul>
         </div>
         <button class="btn-outline" style="width: 100%;" disabled>Current Active Plan</button>
@@ -639,7 +655,7 @@
           <ul class="feature-list">
             <li><strong>Uncapped GIF Duration</strong> (Web Worker)</li>
             <li>Full 1080p HD GIF Resolution</li>
-            <li>Unlimited Multi-Page PDF & TIFF to ZIP</li>
+            <li>Unlimited Batch Image Queue (500+ files)</li>
             <li>No File Size Caps</li>
             <li>Single License Key Activation</li>
           </ul>
@@ -662,6 +678,78 @@
   <canvas id="hiddenCanvas" style="display:none;"></canvas>
 
   <script>
+    /* =========================================================
+       PHASE 3 STEP 9: SERVICE WORKER REGISTRATION (OFFLINE SUPPORT)
+       ========================================================= */
+    const offlineStatusText = document.getElementById('offlineStatusText');
+    const offlineBadge = document.getElementById('offlineBadge');
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          const swCode = `
+            const CACHE_NAME = 'omniconvert-v1';
+            const ASSETS = [
+              'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+              'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js',
+              'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js',
+              'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js',
+              'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js',
+              'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+              'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+              'https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js'
+            ];
+
+            self.addEventListener('install', (e) => {
+              e.waitUntil(
+                caches.open(CACHE_NAME).then((cache) => {
+                  return cache.addAll(ASSETS).catch(() => {});
+                }).then(() => self.skipWaiting())
+              );
+            });
+
+            self.addEventListener('activate', (e) => {
+              e.waitUntil(
+                caches.keys().then((keys) => {
+                  return Promise.all(
+                    keys.map((k) => {
+                      if (k !== CACHE_NAME) return caches.delete(k);
+                    })
+                  );
+                }).then(() => self.clients.claim())
+              );
+            });
+
+            self.addEventListener('fetch', (e) => {
+              e.respondWith(
+                caches.match(e.request).then((cached) => {
+                  if (cached) return cached;
+                  return fetch(e.request).then((resp) => {
+                    if (resp && resp.status === 200 && e.request.method === 'GET') {
+                      const clone = resp.clone();
+                      caches.open(CACHE_NAME).then((c) => c.put(e.request, clone));
+                    }
+                    return resp;
+                  }).catch(() => cached);
+                })
+              );
+            });
+          `;
+
+          const swBlob = new Blob([swCode], { type: 'application/javascript' });
+          const swUrl = URL.createObjectURL(swBlob);
+          const reg = await navigator.serviceWorker.register(swUrl);
+          
+          offlineStatusText.textContent = 'Offline Ready';
+          offlineBadge.style.background = '#ecfdf5';
+          offlineBadge.style.color = '#065f46';
+          offlineBadge.querySelector('.offline-dot').style.background = '#10b981';
+        } catch (err) {
+          offlineStatusText.textContent = 'Online Mode';
+        }
+      });
+    }
+
     function switchTab(type) {
       const tabVideoBtn = document.getElementById('tabVideoBtn');
       const tabDocBtn = document.getElementById('tabDocBtn');
@@ -682,13 +770,11 @@
     }
 
     /* =========================================================
-       SECTION 1: PHASE 2 ENHANCED VIDEO TO GIF ENGINE
+       SECTION 1: VIDEO TO GIF ENGINE
        ========================================================= */
-    
-    // NEW Phase 2 Globals/Targets
-    let MAX_GIF_DURATION = 20.0; // Seconds (Step 4 gating)
+    let MAX_GIF_DURATION = 20.0;
     const TARGET_FPS = 10;
-    const TARGET_GIF_RES = 480; // 480p (Height)
+    const TARGET_GIF_RES = 480;
 
     const videoInput = document.getElementById('videoInput');
     const videoDropzone = document.getElementById('videoDropzone');
@@ -704,101 +790,88 @@
     const gifOutput = document.getElementById('gifOutput');
     const downloadLink = document.getElementById('downloadLink');
     
-    // NEW Phase 2 Duration Gating Controls
     const durationGatingField = document.getElementById('durationGatingField');
     const durationGatingSlider = document.getElementById('durationGatingSlider');
     const durationGatingVal = document.getElementById('durationGatingVal');
 
-    // State for multiple clips
     let clips = [];
 
-    // Phase 2 Step 5: Sequential Upload & Stacked Display
     videoInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
       if (clips.length >= 3) {
-          status.textContent = 'Maximum of 3 clips reached for the standard tier.';
-          videoInput.value = ''; // Reset input
-          return;
+        status.textContent = 'Maximum of 3 clips reached for the standard tier.';
+        videoInput.value = '';
+        return;
       }
 
       status.textContent = `Loading clip ${clips.length + 1}...`;
       
       try {
-          const url = URL.createObjectURL(file);
-          const video = document.createElement('video');
-          video.src = url;
-          video.preload = 'auto';
-          video.muted = true;
+        const url = URL.createObjectURL(file);
+        const video = document.createElement('video');
+        video.src = url;
+        video.preload = 'auto';
+        video.muted = true;
 
-          await new Promise((resolve, reject) => {
-              video.onloadedmetadata = resolve;
-              video.onerror = reject;
-              // Set a timeout just in case
-              setTimeout(() => reject(new Error("Video load timeout")), 10000);
-          });
+        await new Promise((resolve, reject) => {
+          video.onloadedmetadata = resolve;
+          video.onerror = reject;
+          setTimeout(() => reject(new Error("Video load timeout")), 10000);
+        });
 
-          const clip = {
-              id: 'clip-' + Date.now(),
-              file, url, video,
-              duration: video.duration,
-              // Default to 5s window or full duration if shorter, anchored at start
-              startPct: 0, 
-              endPct: Math.min(1, 5 / video.duration) 
-          };
+        const clip = {
+          id: 'clip-' + Date.now(),
+          file, url, video,
+          duration: video.duration,
+          startPct: 0, 
+          endPct: Math.min(1, 5 / video.duration) 
+        };
 
-          clips.push(clip);
-          renderClipCard(clip);
-          updateUiState();
-          
-          // Clear input so same file can be uploaded again if needed
-          videoInput.value = ''; 
-
+        clips.push(clip);
+        renderClipCard(clip);
+        updateUiState();
+        videoInput.value = ''; 
       } catch (err) {
-          status.textContent = 'Error loading video: ' + err.message;
-          console.error(err);
+        status.textContent = 'Error loading video: ' + err.message;
       }
     });
     
-    // NEW: Listen for Duration Gating changes (Phase 2 Step 4)
     durationGatingSlider.addEventListener('input', () => {
-        MAX_GIF_DURATION = parseFloat(durationGatingSlider.value);
-        durationGatingVal.textContent = MAX_GIF_DURATION.toFixed(1) + 's';
-        updateBudgetMeter();
+      MAX_GIF_DURATION = parseFloat(durationGatingSlider.value);
+      durationGatingVal.textContent = MAX_GIF_DURATION.toFixed(1) + 's';
+      updateBudgetMeter();
     });
 
     function updateUiState() {
-        if (clips.length > 0) {
-            meterPanel.style.display = 'flex';
-            durationGatingField.style.display = 'block';
-            convertBtn.disabled = false;
-            status.textContent = `${clips.length} clip(s) loaded. Arrange and trim.`;
-            
-            // Step 5: Stacked Display - Dropzone visual change when full
-            if (clips.length >= 3) {
-                videoDropzone.style.opacity = '0.5';
-                videoDropzone.querySelector('.dropzone-label').textContent = 'Clip slots full (Max 3)';
-            } else {
-                videoDropzone.style.opacity = '1';
-                videoDropzone.querySelector('.dropzone-label').textContent = 'Drop next video file, or browse';
-            }
+      if (clips.length > 0) {
+        meterPanel.style.display = 'flex';
+        durationGatingField.style.display = 'block';
+        convertBtn.disabled = false;
+        status.textContent = `${clips.length} clip(s) loaded. Arrange and trim.`;
+        
+        if (clips.length >= 3) {
+          videoDropzone.style.opacity = '0.5';
+          videoDropzone.querySelector('.dropzone-label').textContent = 'Clip slots full (Max 3)';
         } else {
-            meterPanel.style.display = 'none';
-            durationGatingField.style.display = 'none';
-            convertBtn.disabled = true;
+          videoDropzone.style.opacity = '1';
+          videoDropzone.querySelector('.dropzone-label').textContent = 'Drop next video file, or browse';
         }
-        updateBudgetMeter();
+      } else {
+        meterPanel.style.display = 'none';
+        durationGatingField.style.display = 'none';
+        convertBtn.disabled = true;
+      }
+      updateBudgetMeter();
     }
 
-    // Phase 2 Step 5: Display Stacked Clips with Handle Controls
     function renderClipCard(clip) {
       const card = document.createElement('div');
       card.className = 'clip-card';
-      card.draggable = true; // Entire card is draggable for reordering
+      card.draggable = true;
       card.dataset.id = clip.id;
 
-      // Header serves as the drag handle for reordering
       card.innerHTML = `
         <div class="clip-header">
           <span>⋮⋮ Clip ${clips.length}: ${clip.file.name}</span>
@@ -813,9 +886,7 @@
         </div>
       `;
 
-      // Newest clip stacks on bottom (visually top in column-reverse)
       clipList.appendChild(card);
-      
       setupDragAndDropReordering(card);
       setupOptimizedTrimmer(card, clip);
       generateFilmstrip(card, clip);
@@ -825,7 +896,6 @@
       const canvas = card.querySelector('.filmstrip-canvas');
       const ctx = canvas.getContext('2d');
       const rect = canvas.getBoundingClientRect();
-      // Filmstrip aspect doesn't matter much, just needs thumbnails
       canvas.width = rect.width || 600;
       canvas.height = rect.height || 48;
 
@@ -835,13 +905,11 @@
 
       for (let i = 0; i < thumbCount; i++) {
         clip.video.currentTime = i * step;
-        // Sync seek to ensure frame is drawn
         await new Promise(r => clip.video.onseeked = r);
         ctx.drawImage(clip.video, i * thumbWidth, 0, thumbWidth, canvas.height);
       }
     }
 
-    // Improved Handle Interactions (Phase 2 Req)
     function setupOptimizedTrimmer(card, clip) {
       const container = card.querySelector('.filmstrip-container');
       const overlay = card.querySelector('.trimmer-overlay');
@@ -849,45 +917,28 @@
       const handleR = card.querySelector('.handle-right');
       const timeInfo = card.querySelector('.clip-time-info');
 
-      // Interaction State
-      let activeInteraction = null; // 'left', 'right', 'move'
+      let activeInteraction = null;
       let startX = 0;
       let startStartPct = 0;
       let startEndPct = 1;
 
-      // Helper to calculate Pct from X coord
-      const getPctFromX = (clientX) => {
-          const rect = container.getBoundingClientRect();
-          const x = clientX - rect.left;
-          return Math.max(0, Math.min(1, x / rect.width));
-      };
-
-      // Unified MouseDown Handler
       const onMouseDown = (e, type) => {
-        // Essential: Prevent browser from initiating a drag-and-drop of the div
         e.preventDefault(); 
-        // Essential: Prevent parent .clip-card reordering drag from starting
         e.stopPropagation();
 
         activeInteraction = type;
         startX = e.clientX;
         startStartPct = clip.startPct;
         startEndPct = clip.endPct;
-
-        // Visual feedback
-        overlay.style.transition = 'none'; // Snappy dragging
+        overlay.style.transition = 'none';
 
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
       };
 
-      // Handle specific interactions
       handleL.addEventListener('mousedown', (e) => onMouseDown(e, 'left'));
       handleR.addEventListener('mousedown', (e) => onMouseDown(e, 'right'));
-      
-      // Window (Move) interaction
       overlay.addEventListener('mousedown', (e) => {
-        // Ignore if clicking handles
         if (e.target === handleL || e.target === handleR) return;
         onMouseDown(e, 'move');
       });
@@ -897,16 +948,14 @@
 
         const rect = container.getBoundingClientRect();
         const deltaPct = (e.clientX - startX) / rect.width;
-        const minWindowPct = 0.05; // 5% minimum clip length
+        const minWindowPct = 0.05;
 
         if (activeInteraction === 'left') {
           let newStart = startStartPct + deltaPct;
-          // Constrain within 0 and Right Handle
           newStart = Math.max(0, Math.min(newStart, clip.endPct - minWindowPct));
           clip.startPct = newStart;
         } else if (activeInteraction === 'right') {
           let newEnd = startEndPct + deltaPct;
-          // Constrain within Left Handle and 1.0
           newEnd = Math.min(1, Math.max(newEnd, clip.startPct + minWindowPct));
           clip.endPct = newEnd;
         } else if (activeInteraction === 'move') {
@@ -914,27 +963,20 @@
           let newStart = startStartPct + deltaPct;
           let newEnd = startEndPct + deltaPct;
 
-          // Constrain entire window within 0 and 1.0
-          if (newStart < 0) {
-              newStart = 0;
-              newEnd = windowWidth;
-          } else if (newEnd > 1) {
-              newEnd = 1;
-              newStart = 1 - windowWidth;
-          }
+          if (newStart < 0) { newStart = 0; newEnd = windowWidth; }
+          else if (newEnd > 1) { newEnd = 1; newStart = 1 - windowWidth; }
           clip.startPct = newStart;
           clip.endPct = newEnd;
         }
 
         updateTrimmerUi();
-        // Budget meter updates in real-time
         updateBudgetMeter();
       }
 
       function onMouseUp() {
         if (!activeInteraction) return;
         activeInteraction = null;
-        overlay.style.transition = ''; // Restore transitions if any
+        overlay.style.transition = '';
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
       }
@@ -942,7 +984,6 @@
       function updateTrimmerUi() {
         const leftCoord = clip.startPct * 100;
         const widthCoord = (clip.endPct - clip.startPct) * 100;
-        
         overlay.style.left = leftCoord + '%';
         overlay.style.width = widthCoord + '%';
         
@@ -951,30 +992,16 @@
         timeInfo.textContent = `${startTime}s - ${endTime}s`;
       }
 
-      // Initial Sync
       updateTrimmerUi();
     }
 
-    // Phase 2 Step 5: Drag-and-Drop Reordering
     function setupDragAndDropReordering(card) {
-      // Header is the drag handle for reordering
       const header = card.querySelector('.clip-header');
-      
-      header.addEventListener('mousedown', () => {
-          card.draggable = true;
-      });
-      
-      header.addEventListener('mouseup', () => {
-          // Temporarily disable draggable so text selection works in trimmer handles
-          // Actually, trimmer prevents propagation, so this isn't strictly needed 
-          // but good for hygiene.
-      });
+      header.addEventListener('mousedown', () => { card.draggable = true; });
 
       card.addEventListener('dragstart', (e) => {
         card.classList.add('dragging');
-        // Setting data ensures drag works across browsers
         e.dataTransfer.setData('text/plain', card.dataset.id);
-        // Change feedback image to the card itself
         e.dataTransfer.setDragImage(card, 20, 20);
       });
 
@@ -983,13 +1010,11 @@
         reorderClipsArrayInState();
       });
 
-      // Handle dropping (inserting)
       clipList.addEventListener('dragover', (e) => {
-        e.preventDefault(); // Required to allow drop
+        e.preventDefault();
         const draggingCard = document.querySelector('.clip-card.dragging');
         if (!draggingCard) return;
 
-        // Determine drop target (closest card not being dragged)
         const siblings = [...clipList.querySelectorAll('.clip-card:not(.dragging)')];
         let nextSibling = siblings.find(sibling => {
           return e.clientY <= sibling.getBoundingClientRect().top + sibling.offsetHeight / 2;
@@ -1004,21 +1029,11 @@
     }
 
     function reorderClipsArrayInState() {
-      // DOM is the source of truth for order after drag
       const cardElements = [...clipList.querySelectorAll('.clip-card')];
-      // Map DOM IDs back to state array
-      const newClipsOrder = cardElements.map(el => {
-          return clips.find(c => c.id === el.dataset.id);
-      });
-      clips = newClipsOrder;
-      
-      // Optional: Re-render index numbers in headers if desired
-      // updateClipHeaderIndices(); 
-      
+      clips = cardElements.map(el => clips.find(c => c.id === el.dataset.id));
       status.textContent = 'Clip order updated.';
     }
 
-    // Phase 2 Req: Budget updates in real-time based on ALL stacked clips
     function updateBudgetMeter() {
       if (clips.length === 0) return;
 
@@ -1027,7 +1042,6 @@
         totalSelectedSeconds += (clip.endPct - clip.startPct) * clip.duration;
       });
 
-      // Step 4: Gating logic (Time based now, not frame based)
       const percentageOfBudget = Math.min(100, Math.round((totalSelectedSeconds / MAX_GIF_DURATION) * 100));
 
       frameBudgetLabel.textContent = `${totalSelectedSeconds.toFixed(1)}s / ${MAX_GIF_DURATION.toFixed(1)}s total`;
@@ -1037,9 +1051,8 @@
         statusIndicator.classList.remove('exceeded');
         meterFill.style.backgroundColor = 'var(--indigo-accent)';
         convertBtn.disabled = false;
-        // Don't overwrite processing status if converting
         if (!convertBtn.disabled && convertBtn.textContent !== 'Generating 480p GIF') {
-            status.textContent = 'Ready to convert.';
+          status.textContent = 'Ready to convert.';
         }
       } else {
         statusIndicator.classList.add('exceeded');
@@ -1049,41 +1062,34 @@
       }
     }
 
-    /* Standard GIF Playback rendering (Phase 1, Step 3) */
     convertBtn.addEventListener('click', async () => {
       convertBtn.disabled = true;
       convertBtn.textContent = 'Generating 480p GIF...';
-      status.textContent = 'Processing frames in main thread... UI may lag.';
+      status.textContent = 'Processing frames in worker thread...';
       previewContainer.style.display = 'none';
 
-      // 1. Calculate Standard Aspect & Target Dimensions based on FIRST clip (480p Height)
       const firstVideo = clips[0].video;
-      // Phase 2 Req: Standard 480p (Height)
       const targetHeight = TARGET_GIF_RES; 
-      // Respect original input aspect ratio
       const aspectRatio = firstVideo.videoWidth / firstVideo.videoHeight;
       const targetWidth = Math.round(targetHeight * aspectRatio);
 
-      // Set internal canvas to target res
       hiddenCanvas.width = targetWidth;
       hiddenCanvas.height = targetHeight;
       const ctx = hiddenCanvas.getContext('2d');
 
-      // 2. Setup gif.js with standard quantization (NeuQuant default)
       const workerBlob = new Blob([`importScripts('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');`], { type: 'application/javascript' });
       const workerUrl = URL.createObjectURL(workerBlob);
 
       const gif = new GIF({
         workers: 2,
-        quality: 10, // Default good quality
+        quality: 10,
         width: targetWidth,
         height: targetHeight,
         workerScript: workerUrl
       });
 
-      const stepTime = 1 / TARGET_FPS; // time between frames (0.1s)
+      const stepTime = 1 / TARGET_FPS;
 
-      // 3. Process Clips Sequentially in Order (Phase 2 Step 5)
       for (let i = 0; i < clips.length; i++) {
         const clip = clips[i];
         const startTimeReal = clip.startPct * clip.duration;
@@ -1092,36 +1098,25 @@
         status.textContent = `Extracting frames from Clip ${i+1} of ${clips.length}...`;
 
         let currentTime = startTimeReal;
-        // Strict boundary checking
         while (currentTime < endTimeReal && currentTime < clip.duration) {
-          
           clip.video.currentTime = currentTime;
           
-          // Necessary Sync point: Wait for video to reach that frame
           await new Promise((resolve) => {
-              const onSeeked = () => {
-                  clip.video.removeEventListener('seeked', onSeeked);
-                  resolve();
-              };
-              clip.video.addEventListener('seeked', onSeeked);
-              
-              // Fallback timeout in case seeked doesn't fire (can happen on end-of-file)
-              setTimeout(onSeeked, 500); 
+            const onSeeked = () => {
+              clip.video.removeEventListener('seeked', onSeeked);
+              resolve();
+            };
+            clip.video.addEventListener('seeked', onSeeked);
+            setTimeout(onSeeked, 500); 
           });
 
-          // Draw & Add Frame
-          // Using High Quality sampling automatically since we are drawing full res video
-          // to a 480p canvas.
           ctx.drawImage(clip.video, 0, 0, targetWidth, targetHeight);
-          
-          // Phase 1 Req: 100ms Delay per frame (10fps Standard Playback)
           gif.addFrame(ctx, { copy: true, delay: 100 });
-
           currentTime += stepTime;
         }
       }
 
-      status.textContent = 'Encoding GIF (NeuQuant color optimization)...';
+      status.textContent = 'Encoding GIF with NeuQuant quantization...';
       
       gif.on('finished', (blob) => {
         const gifUrl = URL.createObjectURL(blob);
@@ -1132,7 +1127,6 @@
         convertBtn.disabled = false;
         convertBtn.textContent = 'Generate 480p GIF';
         URL.revokeObjectURL(workerUrl);
-        // Re-run meter check to restore correct ready state
         updateBudgetMeter();
       });
 
@@ -1140,7 +1134,7 @@
     });
 
     /* =========================================================
-       SECTION 2: PHASE 1 ENHANCED DOCUMENT & IMAGE ENGINE
+       SECTION 2: PHASE 2 STEP 6: 50-FILE MULTI-IMAGE BATCH & ZIP ENGINE
        ========================================================= */
     const docInput = document.getElementById('docInput');
     const docPanel = document.getElementById('docPanel');
@@ -1161,69 +1155,84 @@
     const docOutputImg = document.getElementById('docOutputImg');
     const docDownloadLink = document.getElementById('docDownloadLink');
 
-    let currentDocFile = null;
-    let loadedPages = [];
+    // Batch items storage
+    let batchQueue = [];
 
     docInput.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+      const files = Array.from(e.target.files).slice(0, 50); // Enforce up to 50 files
+      if (!files.length) return;
 
-      currentDocFile = file;
-      selectedFileName.textContent = `Selected: ${file.name}`;
-      origSize.textContent = formatBytes(file.size);
+      batchQueue = [];
+      let totalBytes = 0;
+      docStatus.textContent = `Queuing ${files.length} file(s)...`;
       docPanel.style.display = 'block';
       docPreviewContainer.style.display = 'none';
-      docStatus.textContent = 'Decoding binary stream...';
 
-      loadedPages = [];
-      const ext = file.name.split('.').pop().toLowerCase();
+      for (let f = 0; f < files.length; f++) {
+        const file = files[f];
+        totalBytes += file.size;
+        const ext = file.name.split('.').pop().toLowerCase();
 
-      try {
-        if (file.type === 'application/pdf') {
-          const arrayBuffer = await file.arrayBuffer();
-          const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            loadedPages.push(page);
-          }
-          docStatus.textContent = `PDF Loaded (${loadedPages.length} Pages ready for high-DPI rasterization).`;
-        } else if (ext === 'tiff' || ext === 'tif') {
-          // Phase 1 Enhancement: Full Multi-Page TIFF Frame Decode
-          const arrayBuffer = await file.arrayBuffer();
-          const ifds = UTIF.decode(arrayBuffer);
-          
-          for (let i = 0; i < ifds.length; i++) {
-            UTIF.decodeImage(arrayBuffer, ifds[i]);
-            const rgba = UTIF.toRGBA8(ifds[i]);
+        try {
+          if (file.type === 'application/pdf') {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            for (let p = 1; p <= pdf.numPages; p++) {
+              const page = await pdf.getPage(p);
+              batchQueue.push({
+                name: `${file.name.replace(/\.[^/.]+$/, "")}_page_${p}`,
+                type: 'pdf-page',
+                data: page
+              });
+            }
+          } else if (ext === 'tiff' || ext === 'tif') {
+            const arrayBuffer = await file.arrayBuffer();
+            const ifds = UTIF.decode(arrayBuffer);
+            for (let i = 0; i < ifds.length; i++) {
+              UTIF.decodeImage(arrayBuffer, ifds[i]);
+              const rgba = UTIF.toRGBA8(ifds[i]);
+              const canvas = document.createElement('canvas');
+              canvas.width = ifds[i].width;
+              canvas.height = ifds[i].height;
+              const ctx = canvas.getContext('2d');
+              const imgData = ctx.createImageData(canvas.width, canvas.height);
+              imgData.data.set(rgba);
+              ctx.putImageData(imgData, 0, 0);
+
+              batchQueue.push({
+                name: `${file.name.replace(/\.[^/.]+$/, "")}_frame_${i + 1}`,
+                type: 'canvas',
+                data: canvas
+              });
+            }
+          } else {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            await new Promise(r => img.onload = r);
             const canvas = document.createElement('canvas');
-            canvas.width = ifds[i].width;
-            canvas.height = ifds[i].height;
+            canvas.width = img.width;
+            canvas.height = img.height;
             const ctx = canvas.getContext('2d');
-            const imgData = ctx.createImageData(canvas.width, canvas.height);
-            imgData.data.set(rgba);
-            ctx.putImageData(imgData, 0, 0);
-            loadedPages.push(canvas);
-          }
-          docStatus.textContent = `TIFF Loaded: Decoded all ${loadedPages.length} IFD frames.`;
-        } else {
-          // Standard Image Decode
-          const img = new Image();
-          img.src = URL.createObjectURL(file);
-          await new Promise(r => img.onload = r);
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          loadedPages.push(canvas);
-          docStatus.textContent = 'Image loaded into canvas.';
-        }
+            ctx.drawImage(img, 0, 0);
 
-        updateFormatControls();
-        estimateOutputSize();
-      } catch (err) {
-        docStatus.textContent = 'Error parsing document format: ' + err.message;
+            batchQueue.push({
+              name: file.name.replace(/\.[^/.]+$/, ""),
+              type: 'canvas',
+              data: canvas
+            });
+          }
+        } catch (err) {
+          console.error("Error parsing file in batch:", file.name, err);
+        }
       }
+
+      selectedFileName.textContent = `Batch Ready: ${files.length} file(s) loaded (${batchQueue.length} total render frames).`;
+      origSize.textContent = formatBytes(totalBytes);
+      convertDocBtn.textContent = batchQueue.length > 1 ? `Convert All ${batchQueue.length} Frames (ZIP)` : `Convert Image`;
+      docStatus.textContent = 'Batch loaded. Set resolution and compression below.';
+
+      updateFormatControls();
+      estimateOutputSize();
     });
 
     function updateFormatControls() {
@@ -1247,36 +1256,33 @@
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    /* Phase 1 Enhancement: High-DPI Supersampled Canvas Render */
-    async function renderPageToCanvas(page, exportScale) {
+    async function renderBatchItemToCanvas(item, exportScale) {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d', { alpha: true });
 
-      if (currentDocFile.type === 'application/pdf') {
-        // High-Fidelity 2x Supersampled Viewport
+      if (item.type === 'pdf-page') {
         const SUPERSAMPLE_RATIO = 2.0;
-        const totalScale = (exportScale) * SUPERSAMPLE_RATIO;
-        const viewport = page.getViewport({ scale: totalScale });
+        const totalScale = exportScale * SUPERSAMPLE_RATIO;
+        const viewport = item.data.getViewport({ scale: totalScale });
 
         const supersampledCanvas = document.createElement('canvas');
         supersampledCanvas.width = viewport.width;
         supersampledCanvas.height = viewport.height;
         const sCtx = supersampledCanvas.getContext('2d');
 
-        await page.render({ canvasContext: sCtx, viewport }).promise;
+        await item.data.render({ canvasContext: sCtx, viewport }).promise;
 
-        // Downsample onto final export canvas with high-quality bicubic smoothing
         canvas.width = Math.round(viewport.width / SUPERSAMPLE_RATIO);
         canvas.height = Math.round(viewport.height / SUPERSAMPLE_RATIO);
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(supersampledCanvas, 0, 0, canvas.width, canvas.height);
       } else {
-        canvas.width = Math.round(page.width * exportScale);
-        canvas.height = Math.round(page.height * exportScale);
+        canvas.width = Math.round(item.data.width * exportScale);
+        canvas.height = Math.round(item.data.height * exportScale);
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(page, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(item.data, 0, 0, canvas.width, canvas.height);
       }
 
       return canvas;
@@ -1286,22 +1292,22 @@
       qualityVal.textContent = `${qualitySlider.value}%`;
       scaleVal.textContent = `${scaleSlider.value}%`;
 
-      if (!loadedPages.length) return;
+      if (!batchQueue.length) return;
 
       const scale = parseFloat(scaleSlider.value) / 100;
       const targetFormat = formatSelect.value;
       const isWebPLossless = targetFormat === 'image/webp' && webpModeSelect.value === 'lossless';
       const quality = isWebPLossless ? 1.0 : parseFloat(qualitySlider.value) / 100;
 
-      const tempCanvas = await renderPageToCanvas(loadedPages[0], scale);
+      const sampleCanvas = await renderBatchItemToCanvas(batchQueue[0], scale);
 
       if (targetFormat === 'application/pdf') {
-        const baseSize = tempCanvas.width * tempCanvas.height * 0.18 * quality * loadedPages.length;
+        const baseSize = sampleCanvas.width * sampleCanvas.height * 0.18 * quality * batchQueue.length;
         estSize.textContent = formatBytes(baseSize);
       } else {
-        tempCanvas.toBlob((blob) => {
+        sampleCanvas.toBlob((blob) => {
           if (blob) {
-            estSize.textContent = formatBytes(blob.size * loadedPages.length);
+            estSize.textContent = formatBytes(blob.size * batchQueue.length);
           }
         }, targetFormat, quality);
       }
@@ -1318,9 +1324,11 @@
       estimateOutputSize();
     });
 
+    // Multi-File ZIP Output Batch Execution
     convertDocBtn.addEventListener('click', async () => {
+      if (!batchQueue.length) return;
       convertDocBtn.disabled = true;
-      docStatus.textContent = 'Rendering high-fidelity output...';
+      docStatus.textContent = 'Processing multi-file batch...';
       docPreviewContainer.style.display = 'none';
 
       const scale = parseFloat(scaleSlider.value) / 100;
@@ -1333,9 +1341,9 @@
         const { jsPDF } = window.jspdf;
         let pdfDocOut = null;
 
-        for (let i = 0; i < loadedPages.length; i++) {
-          docStatus.textContent = `Rendering page ${i + 1} of ${loadedPages.length} to PDF...`;
-          const canvas = await renderPageToCanvas(loadedPages[i], scale);
+        for (let i = 0; i < batchQueue.length; i++) {
+          docStatus.textContent = `Adding item ${i + 1} of ${batchQueue.length} to PDF...`;
+          const canvas = await renderBatchItemToCanvas(batchQueue[i], scale);
           const imgData = canvas.toDataURL('image/jpeg', quality);
           const orientation = canvas.width > canvas.height ? 'l' : 'p';
 
@@ -1352,40 +1360,41 @@
         const pdfUrl = URL.createObjectURL(pdfBlob);
         docOutputImg.style.display = 'none';
         docDownloadLink.href = pdfUrl;
-        docDownloadLink.download = 'high_res_export.pdf';
+        docDownloadLink.download = 'batch_combined.pdf';
         docDownloadLink.textContent = 'Download Combined PDF';
         docPreviewContainer.style.display = 'block';
-        docStatus.textContent = 'High-DPI PDF generation complete.';
-      } else if (loadedPages.length === 1) {
-        const canvas = await renderPageToCanvas(loadedPages[0], scale);
+        docStatus.textContent = `All ${batchQueue.length} items merged into PDF!`;
+      } else if (batchQueue.length === 1) {
+        const canvas = await renderBatchItemToCanvas(batchQueue[0], scale);
         canvas.toBlob((blob) => {
           const url = URL.createObjectURL(blob);
           docOutputImg.src = url;
           docOutputImg.style.display = 'block';
           docDownloadLink.href = url;
-          docDownloadLink.download = `exported_image.${ext}`;
+          docDownloadLink.download = `${batchQueue[0].name}.${ext}`;
           docDownloadLink.textContent = `Download ${ext.toUpperCase()}`;
           docPreviewContainer.style.display = 'block';
-          docStatus.textContent = 'Export complete.';
+          docStatus.textContent = 'Conversion complete.';
         }, targetFormat, quality);
       } else {
+        // Multi-File ZIP Output for batches up to 50 files
         const zip = new JSZip();
-        for (let i = 0; i < loadedPages.length; i++) {
-          docStatus.textContent = `Rasterizing frame ${i + 1} of ${loadedPages.length}...`;
-          const canvas = await renderPageToCanvas(loadedPages[i], scale);
+        for (let i = 0; i < batchQueue.length; i++) {
+          docStatus.textContent = `Encoding frame ${i + 1} of ${batchQueue.length}...`;
+          const canvas = await renderBatchItemToCanvas(batchQueue[i], scale);
           const blob = await new Promise(r => canvas.toBlob(r, targetFormat, quality));
-          zip.file(`frame-${i + 1}.${ext}`, blob);
+          zip.file(`${batchQueue[i].name}.${ext}`, blob);
         }
 
-        docStatus.textContent = 'Compressing multi-page ZIP bundle...';
+        docStatus.textContent = `Zipping ${batchQueue.length} optimized files...`;
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const zipUrl = URL.createObjectURL(zipBlob);
         docOutputImg.style.display = 'none';
         docDownloadLink.href = zipUrl;
-        docDownloadLink.download = `extracted_frames_${ext}.zip`;
-        docDownloadLink.textContent = `Download All ${loadedPages.length} Frames (ZIP)`;
+        docDownloadLink.download = `omniconvert_batch_${ext}.zip`;
+        docDownloadLink.textContent = `Download All ${batchQueue.length} Files (ZIP)`;
         docPreviewContainer.style.display = 'block';
-        docStatus.textContent = `Successfully processed all ${loadedPages.length} frames.`;
+        docStatus.textContent = `Batch conversion finished: ${batchQueue.length} files bundled into ZIP.`;
       }
 
       convertDocBtn.disabled = false;
