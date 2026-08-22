@@ -176,58 +176,101 @@
     .dropzone-label { font-weight: 600; font-size: 0.95rem; color: var(--slate-700); }
     .dropzone-sub { font-size: 0.8rem; color: var(--slate-500); margin-top: 4px; }
 
-    /* Video Trimmer */
-    #clipList { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+    /* Video Trimmer List */
+    #clipList { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
     .clip-card {
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.9);
       border: 1px solid var(--slate-200);
-      border-radius: 8px;
-      padding: 12px;
-      cursor: grab;
+      border-radius: 10px;
+      padding: 12px 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+      transition: box-shadow 0.2s;
+    }
+    .clip-card.dragging {
+      opacity: 0.5;
+      border-color: var(--indigo-primary);
     }
     .clip-header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       font-size: 0.85rem;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       color: var(--slate-700);
     }
+    .reorder-handle {
+      cursor: grab;
+      padding: 4px 8px;
+      background: var(--slate-200);
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: var(--slate-700);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      user-select: none;
+    }
+    .reorder-handle:active { cursor: grabbing; }
+
     .filmstrip-container {
       position: relative;
-      height: 48px;
-      background: #000;
+      height: 52px;
+      background: #0f172a;
       border-radius: 6px;
       overflow: hidden;
+      user-select: none;
+      touch-action: none;
     }
-    .filmstrip-canvas { width: 100%; height: 100%; display: block; }
+    .filmstrip-canvas { width: 100%; height: 100%; display: block; pointer-events: none; }
+    
     .trimmer-overlay {
       position: absolute;
       top: 0; bottom: 0; left: 0; width: 100%;
-      background: rgba(99, 102, 241, 0.3);
+      background: rgba(99, 102, 241, 0.35);
       border-left: 3px solid var(--indigo-primary);
       border-right: 3px solid var(--indigo-primary);
-      cursor: move;
+      cursor: grab;
+      touch-action: none;
     }
+    .trimmer-overlay:active { cursor: grabbing; }
+
     .handle {
       position: absolute;
-      top: 0; bottom: 0; width: 8px;
+      top: 0; bottom: 0; width: 16px;
       background: var(--indigo-primary);
       cursor: ew-resize;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
     }
-    .handle-left { left: -4px; }
-    .handle-right { right: -4px; }
+    .handle::after {
+      content: '';
+      width: 2px;
+      height: 18px;
+      background: white;
+      border-radius: 1px;
+    }
+    .handle-left { left: -8px; }
+    .handle-right { right: -8px; }
 
-    /* Meter Panel */
-    .meter-panel {
-      background: rgba(241, 245, 249, 0.6);
+    /* Meter Panel & Duration Controls */
+    .controls-panel {
+      background: rgba(241, 245, 249, 0.7);
       border: 1px solid var(--slate-200);
-      padding: 14px 18px;
-      border-radius: 8px;
+      padding: 16px 18px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .meter-panel {
       display: flex;
       align-items: center;
       gap: 14px;
-      margin-bottom: 20px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(203, 213, 225, 0.6);
     }
     .indicator-dot {
       width: 14px; height: 14px;
@@ -235,6 +278,7 @@
       background: #16a34a;
       flex-shrink: 0;
       box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+      transition: background-color 0.2s;
     }
     .indicator-dot.exceeded {
       background: #dc2626;
@@ -251,7 +295,7 @@
       height: 100%;
       background: var(--indigo-accent);
       width: 0%;
-      transition: width 0.2s ease;
+      transition: width 0.2s ease, background-color 0.2s ease;
     }
 
     /* Form Fields */
@@ -351,7 +395,6 @@
       border: 1px solid var(--slate-200);
     }
 
-    /* Pricing Section */
     .pricing-section {
       max-width: 880px;
       margin: 0 auto 64px;
@@ -440,7 +483,7 @@
   <nav class="navbar">
     <div class="brand">
       OmniConvert
-      <span class="brand-pill">Phase 1 Engine</span>
+      <span class="brand-pill">Phase 2 Engine</span>
     </div>
     <div class="nav-actions">
       <button class="btn-outline" onclick="document.getElementById('pricing').scrollIntoView({behavior: 'smooth'})">Plans & Upgrades</button>
@@ -453,7 +496,7 @@
       🔒 High-Fidelity Client-Side Processing
     </div>
     <h1>Professional File Conversion.<br>Zero Cloud Uploads.</h1>
-    <p>Convert video sequences to 410px GIFs or process high-res PDFs and multi-page TIFFs in local memory.</p>
+    <p>Convert video sequences up to 20 seconds to 410px GIFs or process high-res PDFs and multi-page TIFFs in local memory.</p>
   </header>
 
   <!-- Core Tool Section -->
@@ -474,15 +517,26 @@
 
         <div id="clipList"></div>
 
-        <div id="meterPanel" class="meter-panel" style="display:none;">
-          <div id="statusIndicator" class="indicator-dot"></div>
-          <div style="flex-grow: 1;">
-            <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:600;">
-              <span>Frame Budget Allocation</span>
-              <span id="frameBudgetLabel">0 / 100 Frames</span>
+        <!-- Duration & Budget Controls -->
+        <div id="videoControlsPanel" class="controls-panel" style="display:none;">
+          <div class="field" style="margin-bottom:0;">
+            <div class="slider-meta">
+              <span>Max GIF Duration Limit</span>
+              <span id="maxDurationVal">10.0s</span>
             </div>
-            <div class="meter-bar">
-              <div id="meterFill" class="meter-bar-fill"></div>
+            <input type="range" id="maxDurationSlider" min="1" max="20" step="0.5" value="10">
+          </div>
+
+          <div class="meter-panel">
+            <div id="statusIndicator" class="indicator-dot"></div>
+            <div style="flex-grow: 1;">
+              <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:600;">
+                <span>Frame & Duration Allocation</span>
+                <span id="frameBudgetLabel">0 / 500 Frames (0.0s / 10.0s)</span>
+              </div>
+              <div class="meter-bar">
+                <div id="meterFill" class="meter-bar-fill"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -523,7 +577,6 @@
             </div>
           </div>
 
-          <!-- WebP Lossless/Lossy Mode Toggle -->
           <div class="field" id="webpModeContainer">
             <label for="webpModeSelect">WebP Compression Mode</label>
             <select id="webpModeSelect">
@@ -576,11 +629,11 @@
           <p style="font-size: 0.85rem; color: var(--slate-500); margin-top: 2px;">Essential quick conversions</p>
           <div class="price-value">$0 <span>/ free forever</span></div>
           <ul class="feature-list">
-            <li>100 Frame GIF Budget</li>
-            <li>Up to 3-clip video sequence</li>
-            <li>Single & Multi-Page TIFF support</li>
+            <li>Up to 20-second GIF duration controls</li>
+            <li>Up to 3-clip sequence stitching</li>
+            <li>NeuQuant 256-color palette quantization</li>
             <li>Supersampled High-DPI PDF rendering</li>
-            <li>Lossy & Lossless WebP tuning</li>
+            <li>Full Multi-Page TIFF frame decoding</li>
           </ul>
         </div>
         <button class="btn-outline" style="width: 100%;" disabled>Current Active Plan</button>
@@ -593,10 +646,10 @@
           <p style="font-size: 0.85rem; color: var(--slate-500); margin-top: 2px;">For content power-users</p>
           <div class="price-value">$19.99 <span>/ lifetime access</span></div>
           <ul class="feature-list">
-            <li><strong>500 Frame GIF Budget</strong> (High FPS)</li>
+            <li><strong>500 Frame Multi-Threaded Engine</strong></li>
             <li>Unlimited Multi-Page PDF & TIFF to ZIP</li>
             <li>Unlimited Batch Image Conversions</li>
-            <li>No File Size Caps</li>
+            <li>Zero File Size Caps</li>
             <li>Single License Key Activation</li>
           </ul>
         </div>
@@ -638,14 +691,16 @@
     }
 
     /* =========================================================
-       SECTION 1: VIDEO TO GIF ENGINE
+       SECTION 1: PHASE 2 VIDEO TO GIF ENGINE
        ========================================================= */
-    const MAX_FRAMES = 100;
-    const TARGET_FPS = 10;
+    const MAX_FRAMES_BUDGET = 500; // Step 4: 500 Frame Engine
+    const TARGET_FPS = 15;         // Smooth 15fps frame capture
 
     const videoInput = document.getElementById('videoInput');
     const clipList = document.getElementById('clipList');
-    const meterPanel = document.getElementById('meterPanel');
+    const videoControlsPanel = document.getElementById('videoControlsPanel');
+    const maxDurationSlider = document.getElementById('maxDurationSlider');
+    const maxDurationVal = document.getElementById('maxDurationVal');
     const statusIndicator = document.getElementById('statusIndicator');
     const frameBudgetLabel = document.getElementById('frameBudgetLabel');
     const meterFill = document.getElementById('meterFill');
@@ -657,6 +712,11 @@
     const downloadLink = document.getElementById('downloadLink');
 
     let clips = [];
+
+    maxDurationSlider.addEventListener('input', () => {
+      maxDurationVal.textContent = `${parseFloat(maxDurationSlider.value).toFixed(1)}s`;
+      updateBudgetMeter();
+    });
 
     videoInput.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files).slice(0, 3);
@@ -687,7 +747,7 @@
         renderClipCard(clip);
       }
 
-      meterPanel.style.display = 'flex';
+      videoControlsPanel.style.display = 'block';
       convertBtn.disabled = false;
       updateBudgetMeter();
     });
@@ -695,12 +755,11 @@
     function renderClipCard(clip) {
       const card = document.createElement('div');
       card.className = 'clip-card';
-      card.draggable = true;
       card.dataset.id = clip.id;
 
       card.innerHTML = `
         <div class="clip-header">
-          <span>⋮⋮ ${clip.file.name}</span>
+          <span class="reorder-handle" title="Drag to reorder clips">⋮⋮ ${clip.file.name}</span>
           <span class="clip-time-info">0.0s - ${clip.duration.toFixed(1)}s</span>
         </div>
         <div class="filmstrip-container">
@@ -723,7 +782,7 @@
       const ctx = canvas.getContext('2d');
       const rect = canvas.getBoundingClientRect();
       canvas.width = rect.width || 600;
-      canvas.height = rect.height || 48;
+      canvas.height = rect.height || 52;
 
       const thumbCount = 8;
       const thumbWidth = canvas.width / thumbCount;
@@ -736,6 +795,7 @@
       }
     }
 
+    /* Handle Isolation: Trimming handles and overlay now have exclusive pointer captures */
     function setupTrimmer(card, clip) {
       const container = card.querySelector('.filmstrip-container');
       const overlay = card.querySelector('.trimmer-overlay');
@@ -745,23 +805,32 @@
 
       let isDragging = false, dragType = null, startX = 0, startStartPct = 0, startEndPct = 1;
 
-      const onMouseDown = (e, type) => {
+      const onPointerDown = (e, type) => {
         e.stopPropagation();
-        isDragging = true; dragType = type; startX = e.clientX;
-        startStartPct = clip.startPct; startEndPct = clip.endPct;
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+        e.preventDefault();
+        
+        isDragging = true;
+        dragType = type;
+        startX = e.clientX;
+        startStartPct = clip.startPct;
+        startEndPct = clip.endPct;
+
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
       };
 
-      handleL.addEventListener('mousedown', (e) => onMouseDown(e, 'left'));
-      handleR.addEventListener('mousedown', (e) => onMouseDown(e, 'right'));
-      overlay.addEventListener('mousedown', (e) => {
+      handleL.addEventListener('pointerdown', (e) => onPointerDown(e, 'left'));
+      handleR.addEventListener('pointerdown', (e) => onPointerDown(e, 'right'));
+      overlay.addEventListener('pointerdown', (e) => {
         if (e.target === handleL || e.target === handleR) return;
-        onMouseDown(e, 'move');
+        onPointerDown(e, 'move');
       });
 
-      function onMouseMove(e) {
+      function onPointerMove(e) {
         if (!isDragging) return;
+        e.stopPropagation();
+        e.preventDefault();
+
         const rect = container.getBoundingClientRect();
         const deltaPct = (e.clientX - startX) / rect.width;
 
@@ -778,13 +847,15 @@
           clip.startPct = newStart; clip.endPct = newEnd;
         }
 
-        updateOverlayUI(); updateBudgetMeter();
+        updateOverlayUI();
+        updateBudgetMeter();
       }
 
-      function onMouseUp() {
+      function onPointerUp(e) {
+        if (!isDragging) return;
         isDragging = false;
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
+        document.removeEventListener('pointermove', onPointerMove);
+        document.removeEventListener('pointerup', onPointerUp);
       }
 
       function updateOverlayUI() {
@@ -794,18 +865,26 @@
       }
     }
 
+    /* Card Drag & Drop is now scoped strictly to the reorder icon handle */
     function setupDragAndDrop(card) {
-      card.addEventListener('dragstart', (e) => {
+      const handle = card.querySelector('.reorder-handle');
+      handle.draggable = true;
+
+      handle.addEventListener('dragstart', (e) => {
         card.classList.add('dragging');
         e.dataTransfer.setData('text/plain', card.dataset.id);
       });
-      card.addEventListener('dragend', () => {
+
+      handle.addEventListener('dragend', () => {
         card.classList.remove('dragging');
         reorderClipsArray();
       });
+
       clipList.addEventListener('dragover', (e) => {
         e.preventDefault();
-        const draggingCard = document.querySelector('.dragging');
+        const draggingCard = document.querySelector('.clip-card.dragging');
+        if (!draggingCard) return;
+
         const siblings = [...clipList.querySelectorAll('.clip-card:not(.dragging)')];
         const nextSibling = siblings.find(sibling => e.clientY <= sibling.getBoundingClientRect().top + sibling.offsetHeight / 2);
         if (nextSibling) clipList.insertBefore(draggingCard, nextSibling);
@@ -822,13 +901,17 @@
       let totalSeconds = 0;
       clips.forEach(clip => { totalSeconds += (clip.endPct - clip.startPct) * clip.duration; });
 
+      const maxAllowedSeconds = parseFloat(maxDurationSlider.value);
       const totalFramesNeeded = Math.round(totalSeconds * TARGET_FPS);
-      const percentage = Math.min(100, Math.round((totalFramesNeeded / MAX_FRAMES) * 100));
+      
+      const framePct = (totalFramesNeeded / MAX_FRAMES_BUDGET) * 100;
+      const durationPct = (totalSeconds / maxAllowedSeconds) * 100;
+      const displayPct = Math.min(100, Math.max(framePct, durationPct));
 
-      frameBudgetLabel.textContent = `${totalFramesNeeded} / ${MAX_FRAMES} Frames (${totalSeconds.toFixed(1)}s)`;
-      meterFill.style.width = `${percentage}%`;
+      frameBudgetLabel.textContent = `${totalFramesNeeded} / ${MAX_FRAMES_BUDGET} Frames (${totalSeconds.toFixed(1)}s / ${maxAllowedSeconds.toFixed(1)}s)`;
+      meterFill.style.width = `${displayPct}%`;
 
-      if (totalFramesNeeded <= MAX_FRAMES) {
+      if (totalFramesNeeded <= MAX_FRAMES_BUDGET && totalSeconds <= maxAllowedSeconds) {
         statusIndicator.classList.remove('exceeded');
         meterFill.style.backgroundColor = 'var(--indigo-accent)';
         convertBtn.disabled = false;
@@ -837,13 +920,16 @@
         statusIndicator.classList.add('exceeded');
         meterFill.style.backgroundColor = '#dc2626';
         convertBtn.disabled = true;
-        status.textContent = 'Selection exceeds 100-frame budget. Trim clip handles.';
+        status.textContent = totalSeconds > maxAllowedSeconds 
+          ? `Total duration (${totalSeconds.toFixed(1)}s) exceeds max limit (${maxAllowedSeconds.toFixed(1)}s). Adjust duration slider or trim clip handles.`
+          : `Frame budget exceeded.`;
       }
     }
 
+    /* Multi-Threaded NeuQuant GIF Worker Execution */
     convertBtn.addEventListener('click', async () => {
       convertBtn.disabled = true;
-      status.textContent = 'Processing frames locally...';
+      status.textContent = 'Extracting frames from video streams...';
       previewContainer.style.display = 'none';
 
       const firstVideo = clips[0].video;
@@ -857,9 +943,21 @@
       const workerBlob = new Blob([`importScripts('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');`], { type: 'application/javascript' });
       const workerUrl = URL.createObjectURL(workerBlob);
 
-      const gif = new GIF({ workers: 2, quality: 10, width: targetWidth, height: targetHeight, workerScript: workerUrl });
-      const stepTime = 1 / TARGET_FPS;
+      // Phase 2 Step 4 & 5: Multi-threaded Web Workers with NeuQuant Quantization
+      const numWorkers = Math.min(navigator.hardwareConcurrency || 4, 4);
+      const gif = new GIF({
+        workers: numWorkers,
+        quality: 6, // NeuQuant sampling factor (lower is higher quality palette)
+        width: targetWidth,
+        height: targetHeight,
+        workerScript: workerUrl,
+        dither: true
+      });
 
+      const stepTime = 1 / TARGET_FPS;
+      const frameDelay = (1 / TARGET_FPS) * 1000;
+
+      let totalFrames = 0;
       for (let i = 0; i < clips.length; i++) {
         const clip = clips[i];
         let currentTime = clip.startPct * clip.duration;
@@ -869,27 +967,33 @@
           clip.video.currentTime = currentTime;
           await new Promise(r => clip.video.onseeked = r);
           ctx.drawImage(clip.video, 0, 0, targetWidth, targetHeight);
-          gif.addFrame(ctx, { copy: true, delay: 100 });
+          gif.addFrame(ctx, { copy: true, delay: frameDelay });
           currentTime += stepTime;
-          status.textContent = `Extracting frames (Clip ${i + 1} of ${clips.length})...`;
+          totalFrames++;
+          status.textContent = `Extracting frames (${totalFrames} total frames captured across ${i + 1} clip(s))...`;
         }
       }
 
-      status.textContent = 'Rendering GIF...';
+      status.textContent = 'Rendering GIF via multi-threaded NeuQuant workers (0%)...';
+      gif.on('progress', (p) => {
+        status.textContent = `Rendering high-fidelity GIF: ${Math.round(p * 100)}% complete...`;
+      });
+
       gif.on('finished', (blob) => {
         const gifUrl = URL.createObjectURL(blob);
         gifOutput.src = gifUrl;
         downloadLink.href = gifUrl;
         previewContainer.style.display = 'block';
-        status.textContent = 'Render complete.';
+        status.textContent = `Render complete! Output size: ${formatBytes(blob.size)}`;
         convertBtn.disabled = false;
         URL.revokeObjectURL(workerUrl);
       });
+
       gif.render();
     });
 
     /* =========================================================
-       SECTION 2: PHASE 1 ENHANCED DOCUMENT & IMAGE ENGINE
+       SECTION 2: DOCUMENT & IMAGE ENGINE
        ========================================================= */
     const docInput = document.getElementById('docInput');
     const docPanel = document.getElementById('docPanel');
@@ -937,10 +1041,8 @@
           }
           docStatus.textContent = `PDF Loaded (${loadedPages.length} Pages ready for high-DPI rasterization).`;
         } else if (ext === 'tiff' || ext === 'tif') {
-          // Phase 1 Enhancement: Full Multi-Page TIFF Frame Decode
           const arrayBuffer = await file.arrayBuffer();
           const ifds = UTIF.decode(arrayBuffer);
-          
           for (let i = 0; i < ifds.length; i++) {
             UTIF.decodeImage(arrayBuffer, ifds[i]);
             const rgba = UTIF.toRGBA8(ifds[i]);
@@ -955,7 +1057,6 @@
           }
           docStatus.textContent = `TIFF Loaded: Decoded all ${loadedPages.length} IFD frames.`;
         } else {
-          // Standard Image Decode
           const img = new Image();
           img.src = URL.createObjectURL(file);
           await new Promise(r => img.onload = r);
@@ -996,13 +1097,11 @@
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    /* Phase 1 Enhancement: High-DPI Upscaled Canvas Render */
     async function renderPageToCanvas(page, exportScale) {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d', { alpha: true });
 
       if (currentDocFile.type === 'application/pdf') {
-        // High-Fidelity 2x Supersampled Viewport
         const SUPERSAMPLE_RATIO = 2.0;
         const totalScale = (exportScale) * SUPERSAMPLE_RATIO;
         const viewport = page.getViewport({ scale: totalScale });
@@ -1014,7 +1113,6 @@
 
         await page.render({ canvasContext: sCtx, viewport }).promise;
 
-        // Downsample onto final export canvas with high-quality bicubic smoothing
         canvas.width = Math.round(viewport.width / SUPERSAMPLE_RATIO);
         canvas.height = Math.round(viewport.height / SUPERSAMPLE_RATIO);
         ctx.imageSmoothingEnabled = true;
@@ -1069,7 +1167,7 @@
 
     convertDocBtn.addEventListener('click', async () => {
       convertDocBtn.disabled = true;
-      docStatus.textContent = 'Rendering high-fidelity output...';
+      docStatus.textContent = 'Rendering output...';
       docPreviewContainer.style.display = 'none';
 
       const scale = parseFloat(scaleSlider.value) / 100;
